@@ -17,7 +17,25 @@ sealed class Routes(val route: String) {
     object DoctorGraph    : Routes("doctor_graph")
 
     // ── Doctor screens ────────────────────────────────────────────────────
-    object DoctorHome     : Routes("doctor_home")
+    object DoctorHome             : Routes("doctor_home")
+    object DoctorAppointments     : Routes("doctor_appointments")
+
+    object DoctorAppointmentDetail : Routes("doctor_appointment_detail/{appointmentId}") {
+        fun createRoute(appointmentId: String) = "doctor_appointment_detail/$appointmentId"
+        const val ARG = "appointmentId"
+    }
+
+    // Messages bottom-nav tab (the "Messages" title, Chat tab selected)
+    object DoctorMessages         : Routes("doctor_messages")
+
+    // Patient Messages inbox (All / Unread / Urgent tabs)
+    object DoctorPatientMessages  : Routes("doctor_patient_messages")
+
+    // Individual chat with a patient
+    object DoctorChat : Routes("doctor_chat/{patientName}") {
+        fun createRoute(patientName: String) = "doctor_chat/$patientName"
+        const val ARG = "patientName"
+    }
 
     // ── Patient screens ───────────────────────────────────────────────────
     object PatientHome    : Routes("patient_home")
