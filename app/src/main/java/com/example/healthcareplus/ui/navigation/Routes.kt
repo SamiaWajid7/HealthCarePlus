@@ -20,6 +20,12 @@ sealed class Routes(val route: String) {
     object DoctorHome             : Routes("doctor_home")
     object DoctorAppointments     : Routes("doctor_appointments")
 
+    // Video call screen — patientName is passed as a nav argument
+    object DoctorVideoCall : Routes("doctor_video_call/{patientName}") {
+        fun createRoute(patientName: String) = "doctor_video_call/$patientName"
+        const val ARG = "patientName"
+    }
+
     object DoctorAppointmentDetail : Routes("doctor_appointment_detail/{appointmentId}") {
         fun createRoute(appointmentId: String) = "doctor_appointment_detail/$appointmentId"
         const val ARG = "appointmentId"

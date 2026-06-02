@@ -12,6 +12,7 @@ import com.example.healthcareplus.ui.screens.doctor.DoctorChatScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorHomeScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorMessagesScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorPatientMessagesScreen
+import com.example.healthcareplus.ui.screens.doctor.DoctorVideoCallScreen
 
 fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
 
@@ -28,7 +29,9 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
                 onLabReports    = {},
                 onMessages      = { navController.navigate(Routes.DoctorMessages.route) },
                 onProfile       = {},
-                onJoinCall      = {},
+                onJoinCall      = {
+                    navController.navigate(Routes.DoctorVideoCall.createRoute("John Doe"))
+                },
             )
         }
 
@@ -56,6 +59,22 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
                 onBack    = { navController.popBackStack() },
                 onApprove = { navController.popBackStack() },
                 onCancel  = { navController.popBackStack() },
+            )
+        }
+
+        // ── Video call ────────────────────────────────────────────────────
+        composable(
+            route     = Routes.DoctorVideoCall.route,
+            arguments = listOf(navArgument(Routes.DoctorVideoCall.ARG) {
+                type     = NavType.StringType
+                nullable = true
+            }),
+        ) { entry ->
+            DoctorVideoCallScreen(
+                patientName = entry.arguments?.getString(Routes.DoctorVideoCall.ARG) ?: "Patient",
+                onEndCall   = { navController.popBackStack() },
+                onChat      = { navController.navigate(Routes.DoctorMessages.route) },
+                onNotes     = {},
             )
         }
 
