@@ -23,24 +23,9 @@ import com.example.healthcareplus.theme.TextSecondary
 import com.example.healthcareplus.theme.White
 import com.example.healthcareplus.ui.navigation.Routes
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ProfileContentContainer
-//
-// Navigation context:
-//   Used inside:     ProfileScreen  (route = "profile")
-//   Edit Profile:    navigates to Routes.EditProfile  ("edit_profile")
-//   Privacy & Security: navigates to Routes.SecuritySettings ("security_settings")
-//
-// Data shown:
-//   Personal information card — phone, dob, blood group, medical ID
-//   Edit Profile button (blue, full-width)
-//   Privacy & Security list row (with lock icon + chevron)
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 fun ProfileContentContainer(
     navController : NavController,
-    // Data parameters — replace with real ViewModel state as needed
     phoneNumber   : String = "+1 (555) 123-4567",
     dateOfBirth   : String = "January 15, 1990",
     bloodGroup    : String = "O+",
@@ -61,7 +46,6 @@ fun ProfileContentContainer(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
 
-                // Card title
                 Text(
                     text       = "Personal Information",
                     fontSize   = 16.sp,
@@ -71,7 +55,6 @@ fun ProfileContentContainer(
 
                 Spacer(Modifier.height(16.dp))
 
-                // ── Info rows ─────────────────────────────────────────────
                 PersonalInfoRow(label = "Phone Number", value = phoneNumber)
 
                 HorizontalDivider(
@@ -102,7 +85,7 @@ fun ProfileContentContainer(
 
                 // ── Edit Profile button ───────────────────────────────────
                 Button(
-                    onClick  = { navController.navigate(Routes.EditProfile.route) },
+                    onClick  = { navController.navigate(Routes.DoctorEditProfile.route) }, // ✅ Fixed
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
@@ -130,7 +113,7 @@ fun ProfileContentContainer(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { navController.navigate(Routes.SecuritySettings.route) },
+                .clickable { navController.navigate(Routes.DoctorSecuritySettings.route) }, // ✅ Fixed
             shape     = RoundedCornerShape(16.dp),
             colors    = CardDefaults.cardColors(containerColor = White),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -167,10 +150,6 @@ fun ProfileContentContainer(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Private helper: label + value stacked row
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun PersonalInfoRow(label: String, value: String) {
     Column {
@@ -188,10 +167,6 @@ private fun PersonalInfoRow(label: String, value: String) {
         )
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Preview
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 600)
 @Composable

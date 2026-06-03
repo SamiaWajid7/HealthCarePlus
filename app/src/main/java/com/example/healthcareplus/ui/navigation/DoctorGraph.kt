@@ -13,34 +13,47 @@ import com.example.healthcareplus.ui.screens.doctor.DoctorHomeScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorMessagesScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorPatientMessagesScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorVideoCallScreen
-import com.example.healthcareplus.ui.screens.patient.EditProfileScreen
+import com.example.healthcareplus.ui.screens.doctor.EditProfileScreen
 import com.example.healthcareplus.ui.screens.patient.ProfileScreen
+import com.example.healthcareplus.ui.screens.doctor.DoctorSecuritySettingsScreen
+import com.example.healthcareplus.ui.screens.doctor.LabReportRequestsScreen
+import com.example.healthcareplus.ui.screens.doctor.DoctorLabReportsScreen
 
 fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
 
     navigation(
         startDestination = Routes.DoctorHome.route,
-        route            = Routes.DoctorGraph.route,
+        route = Routes.DoctorGraph.route,
     ) {
 
-        // ── Home ──────────────────────────────────────────────────────────
+        // ── Home ─────────────────────────────────────────────
         composable(Routes.DoctorHome.route) {
             DoctorHomeScreen(
                 onNotifications = {},
-                onAppointments  = { navController.navigate(Routes.DoctorAppointments.route) },
-                onLabReports    = {},
-                onMessages      = { navController.navigate(Routes.DoctorMessages.route) },
-                onProfile       = { navController.navigate(Routes.DoctorProfile.route) },
-                onJoinCall      = {
-                    navController.navigate(Routes.DoctorVideoCall.createRoute("John Doe"))
+                onAppointments = {
+                    navController.navigate(Routes.DoctorAppointments.route)
+                },
+                onLabReports = {
+                    navController.navigate(Routes.DoctorLabReports.route)
+                },
+                onMessages = {
+                    navController.navigate(Routes.DoctorMessages.route)
+                },
+                onProfile = {
+                    navController.navigate(Routes.DoctorProfile.route)
+                },
+                onJoinCall = {
+                    navController.navigate(
+                        Routes.DoctorVideoCall.createRoute("John Doe")
+                    )
                 },
             )
         }
 
-        // ── Appointments list ─────────────────────────────────────────────
+        // ── Appointments ─────────────────────────────────────
         composable(Routes.DoctorAppointments.route) {
             DoctorAppointmentsScreen(
-                onBack        = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
                 onViewDetails = { appointment ->
                     navController.navigate(
                         Routes.DoctorAppointmentDetail.createRoute(appointment.id)
@@ -49,84 +62,112 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
             )
         }
 
-        // ── Appointment detail ────────────────────────────────────────────
+        // ── Appointment Detail ───────────────────────────────
         composable(
-            route     = Routes.DoctorAppointmentDetail.route,
+            route = Routes.DoctorAppointmentDetail.route,
             arguments = listOf(navArgument(Routes.DoctorAppointmentDetail.ARG) {
-                type     = NavType.StringType
+                type = NavType.StringType
                 nullable = true
             }),
         ) {
             AppointmentDetailScreen(
-                onBack    = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
                 onApprove = { navController.popBackStack() },
-                onCancel  = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() },
             )
         }
 
-        // ── Video call ────────────────────────────────────────────────────
+        // ── Video Call ───────────────────────────────────────
         composable(
-            route     = Routes.DoctorVideoCall.route,
+            route = Routes.DoctorVideoCall.route,
             arguments = listOf(navArgument(Routes.DoctorVideoCall.ARG) {
-                type     = NavType.StringType
+                type = NavType.StringType
                 nullable = true
             }),
         ) { entry ->
             DoctorVideoCallScreen(
-                patientName = entry.arguments?.getString(Routes.DoctorVideoCall.ARG) ?: "Patient",
-                onEndCall   = { navController.popBackStack() },
-                onChat      = { navController.navigate(Routes.DoctorMessages.route) },
-                onNotes     = {},
+                patientName =
+                    entry.arguments?.getString(Routes.DoctorVideoCall.ARG) ?: "Patient",
+                onEndCall = { navController.popBackStack() },
+                onChat = { navController.navigate(Routes.DoctorMessages.route) },
+                onNotes = {},
             )
         }
 
-        // ── Messages (bottom-nav Chat tab) ────────────────────────────────
+        // ── Messages ─────────────────────────────────────────
         composable(Routes.DoctorMessages.route) {
             DoctorMessagesScreen(
                 onOpenChat = { thread ->
-                    navController.navigate(Routes.DoctorChat.createRoute(thread.patientName))
+                    navController.navigate(
+                        Routes.DoctorChat.createRoute(thread.patientName)
+                    )
                 },
-                onHome    = { navController.navigate(Routes.DoctorHome.route) },
+                onHome = { navController.navigate(Routes.DoctorHome.route) },
                 onReports = {},
                 onProfile = { navController.navigate(Routes.DoctorProfile.route) },
             )
         }
 
-        // ── Patient Messages inbox (All / Unread / Urgent) ────────────────
+        // ── Patient Messages ────────────────────────────────
         composable(Routes.DoctorPatientMessages.route) {
             DoctorPatientMessagesScreen(
-                onBack     = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
                 onOpenChat = { thread ->
-                    navController.navigate(Routes.DoctorChat.createRoute(thread.patientName))
+                    navController.navigate(
+                        Routes.DoctorChat.createRoute(thread.patientName)
+                    )
                 },
             )
         }
 
-        // ── Individual chat with a patient ────────────────────────────────
+        // ── Chat ─────────────────────────────────────────────
         composable(
-            route     = Routes.DoctorChat.route,
+            route = Routes.DoctorChat.route,
             arguments = listOf(navArgument(Routes.DoctorChat.ARG) {
-                type     = NavType.StringType
+                type = NavType.StringType
                 nullable = true
             }),
         ) { entry ->
             DoctorChatScreen(
-                patientName = entry.arguments?.getString(Routes.DoctorChat.ARG) ?: "Patient",
-                onBack      = { navController.popBackStack() },
+                patientName =
+                    entry.arguments?.getString(Routes.DoctorChat.ARG) ?: "Patient",
+                onBack = { navController.popBackStack() },
             )
         }
 
-        // ── Doctor Profile ────────────────────────────────────────────────
+        // ── Profile ──────────────────────────────────────────
         composable(Routes.DoctorProfile.route) {
             ProfileScreen(navController = navController)
         }
 
-        // ── Doctor Edit Profile ───────────────────────────────────────────
-        // ChangesSavedDialog shows internally inside EditProfileScreen
-        // onDismiss → navController.popBackStack() → back to DoctorProfile
+        // ── Edit Profile ─────────────────────────────────────
         composable(Routes.DoctorEditProfile.route) {
             EditProfileScreen(navController = navController)
         }
 
+        // ── Security Settings ────────────────────────────────
+        composable(Routes.DoctorSecuritySettings.route) {
+            DoctorSecuritySettingsScreen(navController = navController)
+        }
+
+        // ── Lab Report Requests (UPLOAD SCREEN) ─────────────
+        composable(Routes.DoctorLabReportRequests.route) {
+            LabReportRequestsScreen(
+                onBack = { navController.popBackStack() },
+                onUploadReport = { navController.popBackStack() },
+
+
+                onViewReport = {
+                    navController.navigate(Routes.DoctorLabReports.route)
+                }
+            )
+        }
+
+        // ── Lab Reports (VIEW SCREEN) ───────────────────────
+        composable(Routes.DoctorLabReports.route) {
+            DoctorLabReportsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }
