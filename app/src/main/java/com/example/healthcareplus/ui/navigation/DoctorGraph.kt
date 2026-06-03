@@ -13,6 +13,8 @@ import com.example.healthcareplus.ui.screens.doctor.DoctorHomeScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorMessagesScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorPatientMessagesScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorVideoCallScreen
+import com.example.healthcareplus.ui.screens.patient.EditProfileScreen
+import com.example.healthcareplus.ui.screens.patient.ProfileScreen
 
 fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
 
@@ -28,7 +30,7 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
                 onAppointments  = { navController.navigate(Routes.DoctorAppointments.route) },
                 onLabReports    = {},
                 onMessages      = { navController.navigate(Routes.DoctorMessages.route) },
-                onProfile       = {},
+                onProfile       = { navController.navigate(Routes.DoctorProfile.route) },
                 onJoinCall      = {
                     navController.navigate(Routes.DoctorVideoCall.createRoute("John Doe"))
                 },
@@ -86,7 +88,7 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
                 },
                 onHome    = { navController.navigate(Routes.DoctorHome.route) },
                 onReports = {},
-                onProfile = {},
+                onProfile = { navController.navigate(Routes.DoctorProfile.route) },
             )
         }
 
@@ -113,5 +115,18 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
                 onBack      = { navController.popBackStack() },
             )
         }
+
+        // ── Doctor Profile ────────────────────────────────────────────────
+        composable(Routes.DoctorProfile.route) {
+            ProfileScreen(navController = navController)
+        }
+
+        // ── Doctor Edit Profile ───────────────────────────────────────────
+        // ChangesSavedDialog shows internally inside EditProfileScreen
+        // onDismiss → navController.popBackStack() → back to DoctorProfile
+        composable(Routes.DoctorEditProfile.route) {
+            EditProfileScreen(navController = navController)
+        }
+
     }
 }

@@ -43,6 +43,12 @@ sealed class Routes(val route: String) {
         const val ARG = "patientName"
     }
 
+    // Doctor Profile & Edit Profile
+    // Note: ChangesSavedDialog has NO route — it is a dialog shown
+    // internally inside DoctorEditProfile, not a separate screen
+    object DoctorProfile     : Routes("doctor_profile")
+    object DoctorEditProfile : Routes("doctor_edit_profile")
+
     // ── Patient screens ───────────────────────────────────────────────────
     object PatientHome    : Routes("patient_home")
     object LabReports     : Routes("lab_reports")
