@@ -17,8 +17,8 @@ import com.example.healthcareplus.ui.screens.doctor.DoctorSecuritySettingsScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorVideoCallScreen
 import com.example.healthcareplus.ui.screens.doctor.EditProfileScreen
 import com.example.healthcareplus.ui.screens.doctor.LabReportRequestsScreen
+import com.example.healthcareplus.ui.screens.doctor.ProfileContentContainer
 import com.example.healthcareplus.ui.screens.patient.NotificationsScreen
-import com.example.healthcareplus.ui.screens.patient.ProfileScreen
 
 fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
 
@@ -31,14 +31,12 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
         composable(Routes.DoctorHome.route) {
             DoctorHomeScreen(
                 onNotifications = {
-                    // Bell icon → Notifications screen
                     navController.navigate(Routes.DoctorNotifications.route)
                 },
                 onAppointments = {
                     navController.navigate(Routes.DoctorAppointments.route)
                 },
                 onLabReports = {
-                    // "Lab Reports" quick action → list screen
                     navController.navigate(Routes.DoctorLabReports.route)
                 },
                 onMessages = {
@@ -144,7 +142,7 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
 
         // ── Profile ───────────────────────────────────────────────────────────
         composable(Routes.DoctorProfile.route) {
-            ProfileScreen(navController = navController)
+            ProfileContentContainer(navController = navController)
         }
 
         // ── Edit Profile ──────────────────────────────────────────────────────
@@ -158,12 +156,10 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
         }
 
         // ── Lab Reports List ──────────────────────────────────────────────────
-        // Shows all patients; "Upload Report" button on each card → LabReportRequests
         composable(Routes.DoctorLabReports.route) {
             DoctorLabReportsScreen(
                 onBack         = { navController.popBackStack() },
                 onUploadReport = { _ ->
-                    // Upload button on a pending card → upload form screen
                     navController.navigate(Routes.DoctorLabReportRequests.route)
                 },
                 onViewReport   = { _ ->
@@ -173,7 +169,6 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
         }
 
         // ── Lab Report Upload Form ─────────────────────────────────────────────
-        // The "Upload Lab Report" form screen
         composable(Routes.DoctorLabReportRequests.route) {
             LabReportRequestsScreen(
                 onBack         = { navController.popBackStack() },
