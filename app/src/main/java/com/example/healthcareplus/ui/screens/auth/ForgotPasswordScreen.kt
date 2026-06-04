@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 
 @Composable
 fun ForgotPasswordScreen(
@@ -28,14 +30,92 @@ fun ForgotPasswordScreen(
     onBackToLogin: () -> Unit = {},
 ) {
     var email by remember { mutableStateOf("") }
+    var showLinkSentDialog by remember { mutableStateOf(false) }
 
+    // ── Link Sent Dialog ──────────────────────────────────────────────────────
+    if (showLinkSentDialog) {
+        Dialog(onDismissRequest = { /* block dismiss on outside tap */ }) {
+            Card(
+                modifier  = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                shape     = RoundedCornerShape(20.dp),
+                colors    = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            ) {
+                Column(
+                    modifier            = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    // Green checkmark circle
+                    Box(
+                        modifier         = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFD4EDDA)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector        = Icons.Outlined.Check,
+                            contentDescription = null,
+                            tint               = Color(0xFF28A745),
+                            modifier           = Modifier.size(36.dp),
+                        )
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    Text(
+                        text       = "Link Sent!",
+                        fontSize   = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = Color(0xFF1A1A2E),
+                        textAlign  = TextAlign.Center,
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text      = "check your email",
+                        fontSize  = 14.sp,
+                        color     = Color(0xFF9CA3AF),
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Spacer(Modifier.height(28.dp))
+
+                    Button(
+                        onClick  = {
+                            showLinkSentDialog = false
+                            onResetSent()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape    = RoundedCornerShape(14.dp),
+                        colors   = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3D5AF1),
+                        ),
+                    ) {
+                        Text(
+                            text       = "Done",
+                            fontSize   = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Main screen ───────────────────────────────────────────────────────────
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White),
     ) {
 
-        // ── Header ───────────────────────────────────────────────────────────
+        // Header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -77,7 +157,7 @@ fun ForgotPasswordScreen(
             }
         }
 
-        // ── Form card ────────────────────────────────────────────────────────
+        // Form card
         Card(
             modifier  = Modifier
                 .fillMaxWidth()
@@ -113,7 +193,7 @@ fun ForgotPasswordScreen(
                 Spacer(Modifier.height(24.dp))
 
                 Button(
-                    onClick  = { onResetSent() },
+                    onClick  = { showLinkSentDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),

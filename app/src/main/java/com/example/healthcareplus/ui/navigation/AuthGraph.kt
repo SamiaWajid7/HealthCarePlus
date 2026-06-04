@@ -2,13 +2,16 @@ package com.example.healthcareplus.ui.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.healthcareplus.ui.screens.auth.DoctorLoginScreen
 import com.example.healthcareplus.ui.screens.auth.ForgotPasswordScreen
 import com.example.healthcareplus.ui.screens.auth.PatientLoginScreen
 import com.example.healthcareplus.ui.screens.auth.PatientSignUpScreen
 import com.example.healthcareplus.ui.screens.auth.RoleSelectionScreen
 import com.example.healthcareplus.ui.screens.auth.UserRole
+import com.example.healthcareplus.ui.screens.patient.VerifyEmailScreen
 import com.example.healthcareplus.ui.screens.splash.SplashScreen
 
 fun NavGraphBuilder.authGraph(navController: NavHostController) {
@@ -49,11 +52,28 @@ fun NavGraphBuilder.authGraph(navController: NavHostController) {
     composable(Routes.PatientSignup.route) {
         PatientSignUpScreen(
             onSignUpSuccess = {
-                navController.navigate(Routes.PatientGraph.route) {
-                    popUpTo(Routes.RoleSelection.route) { inclusive = false }
+                // Navigate to OTP verification after signup
+                navController.navigate(
+                    Routes.VerifyEmail.createRoute("john.doe@email.com")
+                ) {
+                    popUpTo(Routes.PatientSignup.route) { inclusive = false }
                 }
             },
             onLoginClick = { navController.popBackStack() }
+        )
+    }
+
+    // ── OTP / Email Verification ──────────────────────────────────────────
+    composable(
+        route     = Routes.VerifyEmail.route,
+        arguments = listOf(navArgument(Routes.VerifyEmail.ARG) {
+            type     = NavType.StringType
+            nullable = true
+        }),
+    ) { entry ->
+        VerifyEmailScreen(
+            navController = navController,
+            email         = entry.arguments?.getString(Routes.VerifyEmail.ARG) ?: "your email",
         )
     }
 

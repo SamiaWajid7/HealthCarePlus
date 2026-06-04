@@ -47,7 +47,6 @@ fun DoctorVideoCallScreen(
     condition     : String = "Hypertension",
     onEndCall     : () -> Unit = {},
     onChat        : () -> Unit = {},
-    onNotes       : () -> Unit = {},
 ) {
     // Timer state
     var seconds by remember { mutableIntStateOf(1) }
@@ -272,7 +271,7 @@ fun DoctorVideoCallScreen(
                 )
             }
 
-            // Secondary buttons row: Chat + Notes
+            // Secondary buttons row: Chat
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment     = Alignment.CenterVertically,
@@ -281,11 +280,6 @@ fun DoctorVideoCallScreen(
                     icon    = Icons.Outlined.ChatBubbleOutline,
                     label   = "Chat",
                     onClick = onChat,
-                )
-                SecondaryCallButton(
-                    icon    = Icons.Outlined.Description,
-                    label   = "Notes",
-                    onClick = onNotes,
                 )
             }
         }

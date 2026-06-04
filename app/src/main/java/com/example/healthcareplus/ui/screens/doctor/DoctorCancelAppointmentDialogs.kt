@@ -34,19 +34,6 @@ private val BorderLight    = Color(0xFFCCCCCC)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Cancel Appointment Confirmation Dialog
-//
-//    Usage:
-//      var showCancel by remember { mutableStateOf(false) }
-//      var showCancelled by remember { mutableStateOf(false) }
-//
-//      if (showCancel) {
-//          DoctorCancelAppointmentDialog(
-//              doctorName  = "Dr. Sarah Johnson",
-//              dateTime    = "Feb 15, 2024 at 10:00 AM",
-//              onDismiss   = { showCancel = false },
-//              onConfirm   = { showCancel = false; showCancelled = true }
-//          )
-//      }
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun DoctorCancelAppointmentDialog(
@@ -173,13 +160,6 @@ fun DoctorCancelAppointmentDialog(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. Appointment Cancelled Success Dialog
-//
-//    Usage:
-//      if (showCancelled) {
-//          AppointmentCancelledSuccessDialog(
-//              onDismiss = { showCancelled = false; /* navigate back */ }
-//          )
-//      }
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun AppointmentCancelledSuccessDialog(
@@ -257,6 +237,103 @@ fun AppointmentCancelledSuccessDialog(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Appointment Confirmed Dialog  ← NEW
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+fun AppointmentConfirmedDialog(
+    patientName : String = "Robert Brown",
+    dateTime    : String = "Feb 16, 2024 at 2:00 PM",
+    onDismiss   : () -> Unit = {},
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier  = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            shape     = RoundedCornerShape(20.dp),
+            colors    = CardDefaults.cardColors(containerColor = White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+        ) {
+            Column(
+                modifier            = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Checkmark icon in blue circle
+                Box(
+                    modifier         = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFEEF2FF)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector        = Icons.Outlined.Check,
+                        contentDescription = null,
+                        tint               = PrimaryBlue,
+                        modifier           = Modifier.size(40.dp),
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                Text(
+                    text       = "Appointment Confirmed!",
+                    fontSize   = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = TextPrimary,
+                    textAlign  = TextAlign.Center,
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                Text(
+                    text      = "You have successfully approved the appointment for",
+                    fontSize  = 14.sp,
+                    color     = TextMuted,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp,
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text       = patientName,
+                    fontSize   = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = TextPrimary,
+                    textAlign  = TextAlign.Center,
+                )
+                Text(
+                    text      = dateTime,
+                    fontSize  = 13.sp,
+                    color     = TextMuted,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(Modifier.height(28.dp))
+
+                Button(
+                    onClick  = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape    = RoundedCornerShape(14.dp),
+                    colors   = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue,
+                    ),
+                ) {
+                    Text(
+                        text       = "Done",
+                        fontSize   = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+    }
+}
+
 // ── Previews ──────────────────────────────────────────────────────────────────
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
@@ -268,4 +345,10 @@ private fun CancelDialogPreview() {
 @Composable
 private fun CancelledSuccessDialogPreview() {
     AppointmentCancelledSuccessDialog()
+}
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 640)
+@Composable
+private fun ConfirmedDialogPreview() {
+    AppointmentConfirmedDialog()
 }

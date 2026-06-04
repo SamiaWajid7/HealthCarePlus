@@ -10,30 +10,35 @@ import com.example.healthcareplus.ui.screens.doctor.AppointmentDetailScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorAppointmentsScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorChatScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorHomeScreen
+import com.example.healthcareplus.ui.screens.doctor.DoctorLabReportsScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorMessagesScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorPatientMessagesScreen
+import com.example.healthcareplus.ui.screens.doctor.DoctorSecuritySettingsScreen
 import com.example.healthcareplus.ui.screens.doctor.DoctorVideoCallScreen
 import com.example.healthcareplus.ui.screens.doctor.EditProfileScreen
-import com.example.healthcareplus.ui.screens.patient.ProfileScreen
-import com.example.healthcareplus.ui.screens.doctor.DoctorSecuritySettingsScreen
 import com.example.healthcareplus.ui.screens.doctor.LabReportRequestsScreen
-import com.example.healthcareplus.ui.screens.doctor.DoctorLabReportsScreen
+import com.example.healthcareplus.ui.screens.patient.NotificationsScreen
+import com.example.healthcareplus.ui.screens.patient.ProfileScreen
 
 fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
 
     navigation(
         startDestination = Routes.DoctorHome.route,
-        route = Routes.DoctorGraph.route,
+        route            = Routes.DoctorGraph.route,
     ) {
 
-        // ── Home ─────────────────────────────────────────────
+        // ── Home ─────────────────────────────────────────────────────────────
         composable(Routes.DoctorHome.route) {
             DoctorHomeScreen(
-                onNotifications = {},
+                onNotifications = {
+                    // Bell icon → Notifications screen
+                    navController.navigate(Routes.DoctorNotifications.route)
+                },
                 onAppointments = {
                     navController.navigate(Routes.DoctorAppointments.route)
                 },
                 onLabReports = {
+                    // "Lab Reports" quick action → list screen
                     navController.navigate(Routes.DoctorLabReports.route)
                 },
                 onMessages = {
@@ -50,7 +55,12 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
             )
         }
 
-        // ── Appointments ─────────────────────────────────────
+        // ── Notifications ─────────────────────────────────────────────────────
+        composable(Routes.DoctorNotifications.route) {
+            NotificationsScreen(navController = navController)
+        }
+
+        // ── Appointments ─────────────────────────────────────────────────────
         composable(Routes.DoctorAppointments.route) {
             DoctorAppointmentsScreen(
                 onBack = { navController.popBackStack() },
@@ -62,39 +72,37 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
             )
         }
 
-        // ── Appointment Detail ───────────────────────────────
+        // ── Appointment Detail ────────────────────────────────────────────────
         composable(
-            route = Routes.DoctorAppointmentDetail.route,
+            route     = Routes.DoctorAppointmentDetail.route,
             arguments = listOf(navArgument(Routes.DoctorAppointmentDetail.ARG) {
-                type = NavType.StringType
+                type     = NavType.StringType
                 nullable = true
             }),
         ) {
             AppointmentDetailScreen(
-                onBack = { navController.popBackStack() },
+                onBack    = { navController.popBackStack() },
                 onApprove = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() },
+                onCancel  = { navController.popBackStack() },
             )
         }
 
-        // ── Video Call ───────────────────────────────────────
+        // ── Video Call ────────────────────────────────────────────────────────
         composable(
-            route = Routes.DoctorVideoCall.route,
+            route     = Routes.DoctorVideoCall.route,
             arguments = listOf(navArgument(Routes.DoctorVideoCall.ARG) {
-                type = NavType.StringType
+                type     = NavType.StringType
                 nullable = true
             }),
         ) { entry ->
             DoctorVideoCallScreen(
-                patientName =
-                    entry.arguments?.getString(Routes.DoctorVideoCall.ARG) ?: "Patient",
-                onEndCall = { navController.popBackStack() },
-                onChat = { navController.navigate(Routes.DoctorMessages.route) },
-                onNotes = {},
+                patientName = entry.arguments?.getString(Routes.DoctorVideoCall.ARG) ?: "Patient",
+                onEndCall   = { navController.popBackStack() },
+                onChat      = { navController.navigate(Routes.DoctorMessages.route) },
             )
         }
 
-        // ── Messages ─────────────────────────────────────────
+        // ── Messages ──────────────────────────────────────────────────────────
         composable(Routes.DoctorMessages.route) {
             DoctorMessagesScreen(
                 onOpenChat = { thread ->
@@ -102,13 +110,13 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
                         Routes.DoctorChat.createRoute(thread.patientName)
                     )
                 },
-                onHome = { navController.navigate(Routes.DoctorHome.route) },
-                onReports = {},
+                onHome    = { navController.navigate(Routes.DoctorHome.route) },
+                onReports = { navController.navigate(Routes.DoctorLabReports.route) },
                 onProfile = { navController.navigate(Routes.DoctorProfile.route) },
             )
         }
 
-        // ── Patient Messages ────────────────────────────────
+        // ── Patient Messages ──────────────────────────────────────────────────
         composable(Routes.DoctorPatientMessages.route) {
             DoctorPatientMessagesScreen(
                 onBack = { navController.popBackStack() },
@@ -120,53 +128,57 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
             )
         }
 
-        // ── Chat ─────────────────────────────────────────────
+        // ── Chat ──────────────────────────────────────────────────────────────
         composable(
-            route = Routes.DoctorChat.route,
+            route     = Routes.DoctorChat.route,
             arguments = listOf(navArgument(Routes.DoctorChat.ARG) {
-                type = NavType.StringType
+                type     = NavType.StringType
                 nullable = true
             }),
         ) { entry ->
             DoctorChatScreen(
-                patientName =
-                    entry.arguments?.getString(Routes.DoctorChat.ARG) ?: "Patient",
-                onBack = { navController.popBackStack() },
+                patientName = entry.arguments?.getString(Routes.DoctorChat.ARG) ?: "Patient",
+                onBack      = { navController.popBackStack() },
             )
         }
 
-        // ── Profile ──────────────────────────────────────────
+        // ── Profile ───────────────────────────────────────────────────────────
         composable(Routes.DoctorProfile.route) {
             ProfileScreen(navController = navController)
         }
 
-        // ── Edit Profile ─────────────────────────────────────
+        // ── Edit Profile ──────────────────────────────────────────────────────
         composable(Routes.DoctorEditProfile.route) {
             EditProfileScreen(navController = navController)
         }
 
-        // ── Security Settings ────────────────────────────────
+        // ── Security Settings ─────────────────────────────────────────────────
         composable(Routes.DoctorSecuritySettings.route) {
             DoctorSecuritySettingsScreen(navController = navController)
         }
 
-        // ── Lab Report Requests (UPLOAD SCREEN) ─────────────
-        composable(Routes.DoctorLabReportRequests.route) {
-            LabReportRequestsScreen(
-                onBack = { navController.popBackStack() },
-                onUploadReport = { navController.popBackStack() },
-
-
-                onViewReport = {
-                    navController.navigate(Routes.DoctorLabReports.route)
-                }
+        // ── Lab Reports List ──────────────────────────────────────────────────
+        // Shows all patients; "Upload Report" button on each card → LabReportRequests
+        composable(Routes.DoctorLabReports.route) {
+            DoctorLabReportsScreen(
+                onBack         = { navController.popBackStack() },
+                onUploadReport = { _ ->
+                    // Upload button on a pending card → upload form screen
+                    navController.navigate(Routes.DoctorLabReportRequests.route)
+                },
+                onViewReport   = { _ ->
+                    navController.popBackStack()
+                },
             )
         }
 
-        // ── Lab Reports (VIEW SCREEN) ───────────────────────
-        composable(Routes.DoctorLabReports.route) {
-            DoctorLabReportsScreen(
-                onBack = { navController.popBackStack() }
+        // ── Lab Report Upload Form ─────────────────────────────────────────────
+        // The "Upload Lab Report" form screen
+        composable(Routes.DoctorLabReportRequests.route) {
+            LabReportRequestsScreen(
+                onBack         = { navController.popBackStack() },
+                onUploadReport = { navController.popBackStack() },
+                onViewReport   = { navController.navigate(Routes.DoctorLabReports.route) },
             )
         }
     }

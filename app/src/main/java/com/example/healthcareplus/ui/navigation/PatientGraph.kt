@@ -8,6 +8,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.example.healthcareplus.ui.screens.patient.AppointmentConfirmedScreen
 import com.example.healthcareplus.ui.screens.patient.BookAppointmentScreen
+import com.example.healthcareplus.ui.screens.patient.ContactSupportScreen
 import com.example.healthcareplus.ui.screens.patient.EditProfileScreen
 import com.example.healthcareplus.ui.screens.patient.HelpFaqScreen
 import com.example.healthcareplus.ui.screens.patient.LabReportDetailScreen
@@ -56,26 +57,18 @@ fun NavGraphBuilder.patientGraph(navController: NavHostController) {
         }
 
         // ── Appointments ──────────────────────────────────────────────────
-        // BookAppointmentScreen navigates to "appointment_confirmed" internally
         composable(Routes.BookAppointment.route) {
             BookAppointmentScreen(navController = navController)
         }
 
-        // AppointmentConfirmedScreen navigates to "patient_home" and
-        // "my_appointments" internally
         composable(Routes.AppointmentConfirmed.route) {
             AppointmentConfirmedScreen(navController = navController)
         }
 
-        // MyAppointmentsScreen hosts CancelAppointmentDialog internally.
-        // Dialog onConfirm navigates to "appointment_cancelled".
-        // Message button navigates to "chat/{doctorName}".
         composable(Routes.MyAppointments.route) {
             MyAppointmentsScreen(navController = navController)
         }
 
-        // Reuse AppointmentConfirmedScreen for cancelled state,
-        // or swap with your own AppointmentCancelledScreen when ready.
         composable(Routes.AppointmentCancelled.route) {
             AppointmentConfirmedScreen(navController = navController)
         }
@@ -85,20 +78,13 @@ fun NavGraphBuilder.patientGraph(navController: NavHostController) {
             MessagesListScreen(navController = navController)
         }
 
-        // Navigated to as "chat/{doctorName}" from MyAppointmentsScreen
         composable(
             route     = Routes.Chat.route,
             arguments = listOf(navArgument(Routes.Chat.ARG) {
                 type     = NavType.StringType
                 nullable = true
             })
-        ) { entry ->
-            // Replace ChatScreen with your actual composable name if different
-            // ChatScreen(
-            //     navController = navController,
-            //     doctorName    = entry.arguments?.getString(Routes.Chat.ARG) ?: "",
-            // )
-            // Placeholder until ChatScreen is created:
+        ) {
             MessagesListScreen(navController = navController)
         }
 
@@ -108,25 +94,26 @@ fun NavGraphBuilder.patientGraph(navController: NavHostController) {
         }
 
         // ── Profile ───────────────────────────────────────────────────────
-        // ProfileScreen navigates to "edit_profile" and "security_settings" internally
         composable(Routes.Profile.route) {
             ProfileScreen(navController = navController)
         }
 
-        // EditProfileScreen shows ChangesSavedDialog internally
         composable(Routes.EditProfile.route) {
             EditProfileScreen(navController = navController)
         }
 
-        // SecuritySettingsScreen shows LogoutDialog internally.
-        // LogoutDialog onConfirm should call:
-        //   navController.navigate(Routes.PatientLogin.route) { popUpTo(0) { inclusive = true } }
         composable(Routes.SecuritySettings.route) {
             SecuritySettingsScreen(navController = navController)
         }
 
+        // ── Help & Support ────────────────────────────────────────────────
         composable(Routes.HelpSupport.route) {
             HelpFaqScreen(navController = navController)
+        }
+
+        // ── Contact Support ───────────────────────────────────────────────
+        composable(Routes.ContactSupport.route) {
+            ContactSupportScreen(navController = navController)
         }
     }
 }

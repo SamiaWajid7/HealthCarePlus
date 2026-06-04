@@ -30,9 +30,7 @@ private val TextSecondary  = Color(0xFF6B7280)
 private val BgLight        = Color(0xFFF3F4F6)
 private val BadgePending   = Color(0xFFFFF3CD)
 private val BadgePendingText = Color(0xFF856404)
-private val BorderWarning  = Color(0xFFFFC107)
 private val ErrorRed       = Color(0xFFE53935)
-private val ErrorRedBg     = Color(0xFFFFEBEE)
 
 // ── Data model ────────────────────────────────────────────────────────────────
 data class DoctorAppointment(
@@ -57,25 +55,81 @@ fun DoctorAppointmentsScreen(
 ) {
     var selectedTab by remember { mutableStateOf(0) }
 
+    // Dialog state
+    var showConfirmedDialog   by remember { mutableStateOf(false) }
+    var showCancelDialog      by remember { mutableStateOf(false) }
+    var showCancelledDialog   by remember { mutableStateOf(false) }
+    var selectedAppointment   by remember { mutableStateOf<DoctorAppointment?>(null) }
+
     // Sample data — replace with real data source
-    val allAppointments = listOf(
-        DoctorAppointment("1", "Robert Brown",  "HC-2024-0789", "Feb 16, 2024 • 2:00 PM",  "Chest pain and shortness of breath",  "Pending"),
-        DoctorAppointment("2", "Lisa Anderson", "HC-2024-0891", "Feb 17, 2024 • 10:30 AM", "Follow-up consultation",              "Pending"),
-        DoctorAppointment("3", "Mark Davis",    "HC-2024-0654", "Feb 17, 2024 • 3:00 PM",  "Annual physical examination",         "Pending"),
-        DoctorAppointment("4", "John Doe",      "HC-2024-0123", "Feb 15, 2024 • 10:00 AM", "Routine Checkup",                     "Today"),
-        DoctorAppointment("5", "Emma Wilson",   "HC-2024-0456", "Feb 20, 2024 • 9:00 AM",  "Cardiology follow-up",                "Upcoming"),
-        DoctorAppointment("6", "Tom Harris",    "HC-2024-0321", "Feb 10, 2024 • 11:00 AM", "Blood pressure monitoring",           "Completed"),
-    )
+    val allAppointments = remember {
+        mutableStateListOf(
+            DoctorAppointment("1", "Robert Brown",  "HC-2024-0789", "Feb 16, 2024 • 2:00 PM",  "Chest pain and shortness of breath",  "Pending"),
+            DoctorAppointment("2", "Lisa Anderson", "HC-2024-0891", "Feb 17, 2024 • 10:30 AM", "Follow-up consultation",              "Pending"),
+            DoctorAppointment("3", "Mark Davis",    "HC-2024-0654", "Feb 17, 2024 • 3:00 PM",  "Annual physical examination",         "Pending"),
+            DoctorAppointment("4", "John Doe",      "HC-2024-0123", "Feb 15, 2024 • 10:00 AM", "Routine Checkup",                     "Today"),
+            DoctorAppointment("5", "Emma Wilson",   "HC-2024-0456", "Feb 20, 2024 • 9:00 AM",  "Cardiology follow-up",                "Upcoming"),
+            DoctorAppointment("6", "Tom Harris",    "HC-2024-0321", "Feb 10, 2024 • 11:00 AM", "Blood pressure monitoring",           "Completed"),
+        )
+    }
 
-    val filtered = allAppointments.filter { it.status == tabs[selectedTab] }
-    val pendingCount = allAppointments.count { it.status == "Pending" }
+    val filtered     = allAppointments.filter { it.status == tabs[selectedTab] }
+    val pendingCount = allAppointments.count  { it.status == "Pending" }
 
+    // ── Dialogs ───────────────────────────────────────────────────────────────
+
+    // Approve → Appointment Confirmed popup
+    if (showConfirmedDialog && selectedAppointment != null) {
+        AppointmentConfirmedDialog(
+            patientName = selectedAppointment!!.patientName,
+            dateTime    = selectedAppointment!!.dateTime,
+            onDismiss   = {
+                // Move the appointment to "Upcoming" so it leaves Pending tab
+                val idx = allAppointments.indexOfFirst { it.id == selectedAppointment!!.id }
+                if (idx >= 0) {
+                    allAppointments[idx] = allAppointments[idx].copy(status = "Upcoming")
+                }
+                showConfirmedDialog = false
+                selectedAppointment = null
+            },
+        )
+    }
+
+    // X → Cancel confirmation popup
+    if (showCancelDialog && selectedAppointment != null) {
+        DoctorCancelAppointmentDialog(
+            doctorName = selectedAppointment!!.patientName,
+            dateTime   = selectedAppointment!!.dateTime,
+            onDismiss  = {
+                showCancelDialog = false
+                selectedAppointment = null
+            },
+            onConfirm  = {
+                showCancelDialog  = false
+                showCancelledDialog = true
+                // Remove the appointment from the list
+                allAppointments.removeIf { it.id == selectedAppointment!!.id }
+            },
+        )
+    }
+
+    // After cancellation success popup
+    if (showCancelledDialog) {
+        AppointmentCancelledSuccessDialog(
+            onDismiss = {
+                showCancelledDialog = false
+                selectedAppointment = null
+            },
+        )
+    }
+
+    // ── Main UI ───────────────────────────────────────────────────────────────
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BgLight),
     ) {
-        // ── Top bar ───────────────────────────────────────────────────────
+        // Top bar
         Row(
             modifier          = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -98,9 +152,9 @@ fun DoctorAppointmentsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Tab row ───────────────────────────────────────────────────────
+        // Tab row
         Row(
-            modifier            = Modifier
+            modifier              = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -132,7 +186,7 @@ fun DoctorAppointmentsScreen(
 
         Spacer(Modifier.height(14.dp))
 
-        // ── Pending action banner (only on Pending tab) ───────────────────
+        // Pending action banner
         if (selectedTab == 0 && pendingCount > 0) {
             Box(
                 modifier = Modifier
@@ -151,17 +205,23 @@ fun DoctorAppointmentsScreen(
             Spacer(Modifier.height(10.dp))
         }
 
-        // ── List ──────────────────────────────────────────────────────────
+        // List
         LazyColumn(
             contentPadding      = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(filtered) { appt ->
+            items(filtered, key = { it.id }) { appt ->
                 DoctorAppointmentCard(
                     appointment   = appt,
                     onViewDetails = { onViewDetails(appt) },
-                    onApprove     = { /* handle approve */ },
-                    onReject      = { /* handle reject */ },
+                    onApprove     = {
+                        selectedAppointment = appt
+                        showConfirmedDialog = true
+                    },
+                    onReject      = {
+                        selectedAppointment = appt
+                        showCancelDialog    = true
+                    },
                 )
             }
             item { Spacer(Modifier.height(12.dp)) }
@@ -185,7 +245,6 @@ private fun DoctorAppointmentCard(
         colors    = CardDefaults.cardColors(containerColor = White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        // Left colour accent bar for pending
         Row {
             if (isPending) {
                 Box(
@@ -200,7 +259,7 @@ private fun DoctorAppointmentCard(
             }
             Column(modifier = Modifier.padding(14.dp)) {
 
-                // ── Patient row ───────────────────────────────────────────
+                // Patient row
                 Row(
                     modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -254,7 +313,7 @@ private fun DoctorAppointmentCard(
 
                 Spacer(Modifier.height(10.dp))
 
-                // ── Date/time ─────────────────────────────────────────────
+                // Date/time
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector        = Icons.Outlined.CalendarMonth,
@@ -278,11 +337,11 @@ private fun DoctorAppointmentCard(
                     color    = TextSecondary,
                 )
 
-                // ── Action buttons (pending only) ─────────────────────────
+                // Action buttons (pending only)
                 if (isPending) {
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Approve
+                        // Approve → triggers Confirmed dialog
                         Button(
                             onClick        = onApprove,
                             modifier       = Modifier.height(34.dp),
@@ -309,7 +368,7 @@ private fun DoctorAppointmentCard(
                         ) {
                             Text("View Details", fontSize = 12.sp)
                         }
-                        // Reject (X button)
+                        // Reject (X) → triggers Cancel dialog
                         Box(
                             modifier = Modifier
                                 .size(34.dp)

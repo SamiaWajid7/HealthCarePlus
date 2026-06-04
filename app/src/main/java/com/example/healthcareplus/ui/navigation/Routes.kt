@@ -12,16 +12,19 @@ sealed class Routes(val route: String) {
     object ForgotPassword : Routes("forgot_password")
     object DoctorLogin : Routes("doctor_login")
 
+    // ── Email Verification ────────────────────────────────────────────────
+    object VerifyEmail : Routes("verify_email/{email}") {
+        fun createRoute(email: String) = "verify_email/$email"
+        const val ARG = "email"
+    }
+
     // ── Graph roots ───────────────────────────────────────────────────────
     object PatientGraph : Routes("patient_graph")
     object DoctorGraph : Routes("doctor_graph")
 
     // ── Doctor screens ────────────────────────────────────────────────────
     object DoctorHome : Routes("doctor_home")
-
     object DoctorAppointments : Routes("doctor_appointments")
-
-    // NEW ROUTE FOR DoctorLabReportsScreen
     object DoctorLabReports : Routes("doctor_lab_reports")
 
     object DoctorVideoCall : Routes("doctor_video_call/{patientName}") {
@@ -35,7 +38,6 @@ sealed class Routes(val route: String) {
     }
 
     object DoctorMessages : Routes("doctor_messages")
-
     object DoctorPatientMessages : Routes("doctor_patient_messages")
 
     object DoctorChat : Routes("doctor_chat/{patientName}") {
@@ -44,12 +46,10 @@ sealed class Routes(val route: String) {
     }
 
     object DoctorProfile : Routes("doctor_profile")
-
     object DoctorEditProfile : Routes("doctor_edit_profile")
-
     object DoctorSecuritySettings : Routes("doctor_security_settings")
-
     object DoctorLabReportRequests : Routes("doctor_lab_report_requests")
+    object DoctorNotifications : Routes("doctor_notifications")
 
     // ── Patient screens ───────────────────────────────────────────────────
     object PatientHome : Routes("patient_home")
@@ -62,11 +62,8 @@ sealed class Routes(val route: String) {
     }
 
     object BookAppointment : Routes("book_appointment")
-
     object AppointmentConfirmed : Routes("appointment_confirmed")
-
     object MyAppointments : Routes("my_appointments")
-
     object AppointmentCancelled : Routes("appointment_cancelled")
 
     object Messages : Routes("messages_list")
@@ -77,12 +74,11 @@ sealed class Routes(val route: String) {
     }
 
     object Notifications : Routes("notifications")
-
     object Profile : Routes("profile")
-
     object EditProfile : Routes("edit_profile")
-
     object SecuritySettings : Routes("security_settings")
-
     object HelpSupport : Routes("help_faq")
+
+    // ── Support ───────────────────────────────────────────────────────────
+    object ContactSupport : Routes("contact_support")
 }

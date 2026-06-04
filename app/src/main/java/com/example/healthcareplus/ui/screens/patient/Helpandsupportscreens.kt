@@ -1,6 +1,5 @@
 package com.example.healthcareplus.ui.screens.patient
 
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -74,7 +73,7 @@ fun HelpFaqScreen(navController: NavController) {
             Text("Help & FAQ", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A2E))
             Text("Find answers to common questions", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp, bottom = 20.dp))
 
-            // Contact Us Button
+            // Contact Us Button — uses proper route constant
             Card(
                 modifier = Modifier
                     .fillMaxWidth(0.5f)
@@ -170,6 +169,102 @@ fun HelpFaqScreen(navController: NavController) {
 @Composable
 fun ContactSupportScreen(navController: NavController) {
     val primaryBlue = Color(0xFF3B4EFF)
+    var showStillNeedHelpDialog by remember { mutableStateOf(false) }
+    var messageText by remember { mutableStateOf("") }
+    var messageSent by remember { mutableStateOf(false) }
+
+    // ── Still Need Help? Dialog ───────────────────────────────────────────
+    if (showStillNeedHelpDialog) {
+        AlertDialog(
+            onDismissRequest = { showStillNeedHelpDialog = false },
+            containerColor   = Color.White,
+            shape            = RoundedCornerShape(20.dp),
+            icon = {
+                Box(
+                    modifier = Modifier.size(64.dp).clip(CircleShape).background(Color(0xFFE8EEFF)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.SupportAgent, null, tint = primaryBlue, modifier = Modifier.size(32.dp))
+                }
+            },
+            title = {
+                Text(
+                    "Send us a message",
+                    fontSize   = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = Color(0xFF1A1A2E),
+                    textAlign  = TextAlign.Center,
+                    modifier   = Modifier.fillMaxWidth(),
+                )
+            },
+            text = {
+                if (messageSent) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF28A745), modifier = Modifier.size(48.dp))
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "Message sent! Our team will get back to you within 24 hours.",
+                            fontSize  = 14.sp,
+                            color     = Color(0xFF555555),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                } else {
+                    Column {
+                        Text("Describe your issue and we'll respond within 24 hours.", fontSize = 13.sp, color = Color.Gray)
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value         = messageText,
+                            onValueChange = { messageText = it },
+                            placeholder   = { Text("Type your message here...", fontSize = 13.sp) },
+                            modifier      = Modifier.fillMaxWidth().height(120.dp),
+                            shape         = RoundedCornerShape(12.dp),
+                            colors        = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor   = primaryBlue,
+                                unfocusedBorderColor = Color(0xFFDDDDDD),
+                            ),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                if (messageSent) {
+                    Button(
+                        onClick  = {
+                            messageSent            = false
+                            messageText            = ""
+                            showStillNeedHelpDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape    = RoundedCornerShape(12.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                    ) {
+                        Text("Done", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Button(
+                        onClick  = { if (messageText.isNotBlank()) messageSent = true },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape    = RoundedCornerShape(12.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                    ) {
+                        Text("Send Message", fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            dismissButton = {
+                if (!messageSent) {
+                    OutlinedButton(
+                        onClick  = { showStillNeedHelpDialog = false },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape    = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -190,15 +285,16 @@ fun ContactSupportScreen(navController: NavController) {
 
         Text(
             "Contact Support",
-            fontSize = 22.sp,
+            fontSize   = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF1A1A2E),
-            modifier = Modifier.padding(horizontal = 20.dp)
+            color      = Color(0xFF1A1A2E),
+            modifier   = Modifier.padding(horizontal = 20.dp)
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -207,21 +303,21 @@ fun ContactSupportScreen(navController: NavController) {
             // Call Us
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { },
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape    = RoundedCornerShape(14.dp),
+                colors   = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFE8F5E9)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF28A745), modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Phone, null, tint = Color(0xFF28A745), modifier = Modifier.size(24.dp))
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
@@ -229,28 +325,28 @@ fun ContactSupportScreen(navController: NavController) {
                             Text("+1 (555) 123-4567", fontSize = 13.sp, color = Color.Gray)
                         }
                     }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+                    Icon(Icons.Default.ChevronRight, null, tint = Color.Gray)
                 }
             }
 
             // Email Us
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { },
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape    = RoundedCornerShape(14.dp),
+                colors   = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFE8F5E9)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFF28A745), modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Email, null, tint = Color(0xFF28A745), modifier = Modifier.size(24.dp))
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
@@ -258,16 +354,16 @@ fun ContactSupportScreen(navController: NavController) {
                             Text("support@healthcare.com", fontSize = 13.sp, color = Color.Gray)
                         }
                     }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+                    Icon(Icons.Default.ChevronRight, null, tint = Color.Gray)
                 }
             }
 
             // Support Hours
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)
+                shape    = RoundedCornerShape(14.dp),
+                colors   = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
                     Text("Support Hours", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A2E))
@@ -279,6 +375,50 @@ fun ContactSupportScreen(navController: NavController) {
                     Text("Sunday: Closed", fontSize = 13.sp, color = Color(0xFF555555))
                 }
             }
+
+            // ── Still Need Help? ─────────────────────────────────────────
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape    = RoundedCornerShape(14.dp),
+                colors   = CardDefaults.cardColors(containerColor = Color(0xFFE8EEFF)),
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
+                Column(
+                    modifier            = Modifier.fillMaxWidth().padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Default.SupportAgent, null, tint = primaryBlue, modifier = Modifier.size(32.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        "Still Need Help?",
+                        fontSize   = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = Color(0xFF1A1A2E),
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Send us a message and we'll get back to you within 24 hours.",
+                        fontSize  = 13.sp,
+                        color     = Color(0xFF555555),
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick  = { showStillNeedHelpDialog = true },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape    = RoundedCornerShape(12.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                    ) {
+                        Icon(Icons.Default.Send, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Send a Message", fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -291,9 +431,9 @@ fun ContactSupportScreen(navController: NavController) {
 @Composable
 fun VerifyEmailScreen(navController: NavController, email: String = "john.doe@email.com") {
     val primaryBlue = Color(0xFF3B4EFF)
-    val otpLength = 6
-    val otpValues = remember { mutableStateListOf(*Array(otpLength) { "" }) }
-    var timeLeft by remember { mutableStateOf(59) }
+    val otpLength   = 6
+    val otpValues   = remember { mutableStateListOf(*Array(otpLength) { "" }) }
+    var timeLeft    by remember { mutableStateOf(59) }
 
     LaunchedEffect(Unit) {
         while (timeLeft > 0) {
@@ -305,7 +445,7 @@ fun VerifyEmailScreen(navController: NavController, email: String = "john.doe@em
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F6FA))
+            .background(Color.White)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
@@ -318,9 +458,7 @@ fun VerifyEmailScreen(navController: NavController, email: String = "john.doe@em
         }
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
+            modifier            = Modifier.fillMaxSize().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(24.dp))
@@ -329,7 +467,7 @@ fun VerifyEmailScreen(navController: NavController, email: String = "john.doe@em
                 modifier = Modifier.size(80.dp).clip(CircleShape).background(Color(0xFFE8EEFF)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Email, contentDescription = null, tint = primaryBlue, modifier = Modifier.size(40.dp))
+                Icon(Icons.Default.Email, null, tint = primaryBlue, modifier = Modifier.size(40.dp))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -344,31 +482,30 @@ fun VerifyEmailScreen(navController: NavController, email: String = "john.doe@em
             Text("Enter the 6-digit code", fontSize = 14.sp, color = Color(0xFF555555))
             Spacer(modifier = Modifier.height(16.dp))
 
-            // OTP Input Boxes
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 repeat(otpLength) { index ->
                     OutlinedTextField(
-                        value = otpValues[index],
+                        value         = otpValues[index],
                         onValueChange = { value ->
                             if (value.length <= 1 && value.all { it.isDigit() }) {
                                 otpValues[index] = value
                             }
                         },
-                        modifier = Modifier.size(50.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        textStyle = LocalTextStyle.current.copy(
-                            textAlign = TextAlign.Center,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                        modifier   = Modifier.size(50.dp),
+                        shape      = RoundedCornerShape(10.dp),
+                        textStyle  = LocalTextStyle.current.copy(
+                            textAlign  = TextAlign.Center,
+                            fontSize   = 20.sp,
+                            fontWeight = FontWeight.Bold,
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = Color(0xFFDDDDDD),
-                            focusedBorderColor = primaryBlue,
+                            unfocusedBorderColor    = Color(0xFFDDDDDD),
+                            focusedBorderColor      = primaryBlue,
                             unfocusedContainerColor = Color.White,
-                            focusedContainerColor = Color.White
+                            focusedContainerColor   = Color.White,
                         ),
-                        singleLine = true
+                        singleLine = true,
                     )
                 }
             }
@@ -385,20 +522,24 @@ fun VerifyEmailScreen(navController: NavController, email: String = "john.doe@em
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     "Resend Code",
-                    fontSize = 13.sp,
-                    color = primaryBlue,
+                    fontSize   = 13.sp,
+                    color      = primaryBlue,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { timeLeft = 59 }
+                    modifier   = Modifier.clickable { timeLeft = 59 }
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { navController.navigate("patient_home") },
+                onClick = {
+                    navController.navigate("patient_home") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryBlue)
+                shape    = RoundedCornerShape(14.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = primaryBlue),
             ) {
                 Text("Verify Email", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
@@ -408,7 +549,7 @@ fun VerifyEmailScreen(navController: NavController, email: String = "john.doe@em
             Text(
                 "Wrong email? Change it",
                 fontSize = 13.sp,
-                color = Color.Gray,
+                color    = Color.Gray,
                 modifier = Modifier.clickable { navController.popBackStack() }
             )
         }
