@@ -12,17 +12,23 @@ import com.example.healthcareplus.ui.screens.auth.PatientSignUpScreen
 import com.example.healthcareplus.ui.screens.auth.RoleSelectionScreen
 import com.example.healthcareplus.ui.screens.auth.UserRole
 import com.example.healthcareplus.ui.screens.patient.VerifyEmailScreen
+import com.example.healthcareplus.ui.screens.splash.SplashDestination
 import com.example.healthcareplus.ui.screens.splash.SplashScreen
 
 fun NavGraphBuilder.authGraph(navController: NavHostController) {
 
     composable(Routes.Splash.route) {
         SplashScreen(
-            onSplashFinished = {
-                navController.navigate(Routes.RoleSelection.route) {
+            onSplashFinished = { destination ->
+                val route = when (destination) {
+                    SplashDestination.RoleSelection -> Routes.RoleSelection.route
+                    SplashDestination.PatientGraph    -> Routes.PatientGraph.route
+                    SplashDestination.DoctorGraph     -> Routes.DoctorGraph.route
+                }
+                navController.navigate(route) {
                     popUpTo(Routes.Splash.route) { inclusive = true }
                 }
-            }
+            },
         )
     }
 

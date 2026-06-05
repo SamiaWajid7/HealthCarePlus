@@ -25,6 +25,40 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.healthcareplus.data.repository.AuthRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+sealed class PatientLoginUiState {
+    data object Loading : PatientLoginUiState()
+    data object Success : PatientLoginUiState()
+    data class Error(val message: String) : PatientLoginUiState()
+}
+
+class PatientLoginViewModel(
+    private val authRepository: AuthRepository = AuthRepository(),
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<PatientLoginUiState?>(null)
+    val uiState: StateFlow<PatientLoginUiState?> = _uiState.asStateFlow()
+
+    fun login(email: String, password: String) {
+        viewModelScope.launch {
+            _uiState.value = PatientLoginUiState.Loading
+            val result = authRepository.loginPatient(email, password)
+            _uiState.value = result.fold(
+                onSuccess = { PatientLoginUiState.Success },
+                onFailure = { PatientLoginUiState.Error(it.message ?: "Login failed") },
+            )
+        }
+    }
+}
 
 private val PrimaryBlue   = Color(0xFF3D5AF1)
 private val White         = Color(0xFFFFFFFF)
@@ -39,10 +73,20 @@ fun PatientLoginScreen(
     onLoginSuccess    : () -> Unit = {},
     onSignUpClick     : () -> Unit = {},
     onForgotPassword  : () -> Unit = {},
+    viewModel         : PatientLoginViewModel = viewModel(),
 ) {
     var email           by remember { mutableStateOf("") }
     var password        by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isLoading = uiState is PatientLoginUiState.Loading
+
+    LaunchedEffect(uiState) {
+        if (uiState is PatientLoginUiState.Success) {
+            onLoginSuccess()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -149,18 +193,39 @@ fun PatientLoginScreen(
 
                 // Sign In button
                 Button(
-                    onClick  = { onLoginSuccess() },
+                    onClick  = { viewModel.login(email, password) },
+                    enabled  = !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
                     shape  = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                 ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(24.dp),
+                            color       = White,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(
+                            text       = "Sign In",
+                            fontSize   = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = White,
+                        )
+                    }
+                }
+
+                val errorState = uiState as? PatientLoginUiState.Error
+                if (errorState != null) {
+                    Spacer(Modifier.height(8.dp))
                     Text(
-                        text       = "Sign In",
-                        fontSize   = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color      = White,
+                        text      = errorState.message,
+                        fontSize  = 13.sp,
+                        color     = Color.Red,
+                        textAlign = TextAlign.Center,
+                        modifier  = Modifier.fillMaxWidth(),
                     )
                 }
 

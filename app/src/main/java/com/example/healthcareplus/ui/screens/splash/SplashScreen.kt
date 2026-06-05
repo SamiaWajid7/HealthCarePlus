@@ -20,7 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.healthcareplus.data.repository.AuthRepository
 import kotlinx.coroutines.delay
+
+sealed class SplashDestination {
+    data object RoleSelection : SplashDestination()
+    data object PatientGraph : SplashDestination()
+    data object DoctorGraph : SplashDestination()
+}
 
 // ── Colours (inline — replace with your ClinicColors if preferred) ──────────
 private val PrimaryBlue   = Color(0xFF3D5AF1)
@@ -32,7 +39,8 @@ private val dots = listOf(0, 1, 2)
 
 @Composable
 fun SplashScreen(
-    onSplashFinished: () -> Unit = {},
+    onSplashFinished: (SplashDestination) -> Unit = {},
+    authRepository: AuthRepository = AuthRepository(),
 ) {
     // Fade-in animation
     var visible by remember { mutableStateOf(false) }
@@ -46,7 +54,18 @@ fun SplashScreen(
     LaunchedEffect(Unit) {
         visible = true
         delay(2500)
-        onSplashFinished()
+
+        val destination = if (!authRepository.isLoggedIn()) {
+            SplashDestination.RoleSelection
+        } else {
+            when (authRepository.getCurrentUserRole()) {
+                "doctor" -> SplashDestination.DoctorGraph
+                "patient" -> SplashDestination.PatientGraph
+                else -> SplashDestination.RoleSelection
+            }
+        }
+
+        onSplashFinished(destination)
     }
 
     Box(

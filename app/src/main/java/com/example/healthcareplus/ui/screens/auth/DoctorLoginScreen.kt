@@ -22,16 +22,75 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.healthcareplus.data.repository.AuthRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+sealed class DoctorLoginUiState {
+    data object Loading : DoctorLoginUiState()
+    data object Success : DoctorLoginUiState()
+    data class Error(val message: String) : DoctorLoginUiState()
+}
+
+class DoctorLoginViewModel(
+    private val authRepository: AuthRepository = AuthRepository(),
+) : ViewModel() {
+
+    private val _medicalId = MutableStateFlow("")
+    val medicalId: StateFlow<String> = _medicalId.asStateFlow()
+
+    private val _password = MutableStateFlow("")
+    val password: StateFlow<String> = _password.asStateFlow()
+
+    private val _uiState = MutableStateFlow<DoctorLoginUiState?>(null)
+    val uiState: StateFlow<DoctorLoginUiState?> = _uiState.asStateFlow()
+
+    fun onMedicalIdChange(value: String) {
+        _medicalId.value = value
+    }
+
+    fun onPasswordChange(value: String) {
+        _password.value = value
+    }
+
+    fun login() {
+        viewModelScope.launch {
+            _uiState.value = DoctorLoginUiState.Loading
+            val result = authRepository.loginDoctor(_medicalId.value, _password.value)
+            _uiState.value = result.fold(
+                onSuccess = { DoctorLoginUiState.Success },
+                onFailure = { DoctorLoginUiState.Error(it.message ?: "Login failed") },
+            )
+        }
+    }
+}
 
 @Composable
 fun DoctorLoginScreen(
     onLoginSuccess   : () -> Unit = {},
     onForgotPassword : () -> Unit = {},
+    viewModel        : DoctorLoginViewModel = viewModel(),
 ) {
-    var medicalId       by remember { mutableStateOf("") }
-    var password        by remember { mutableStateOf("") }
+    val medicalId by viewModel.medicalId.collectAsStateWithLifecycle()
+    val password by viewModel.password.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe      by remember { mutableStateOf(false) }
+
+    val isLoading = uiState is DoctorLoginUiState.Loading
+
+    LaunchedEffect(uiState) {
+        if (uiState is DoctorLoginUiState.Success) {
+            onLoginSuccess()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -99,7 +158,7 @@ fun DoctorLoginScreen(
                 Spacer(Modifier.height(6.dp))
                 AuthTextField(
                     value         = medicalId,
-                    onValueChange = { medicalId = it },
+                    onValueChange = viewModel::onMedicalIdChange,
                     placeholder   = "Enter your medical ID or email",
                     leadingIcon   = Icons.Outlined.Email,
                     keyboardType  = KeyboardType.Email,
@@ -112,7 +171,7 @@ fun DoctorLoginScreen(
                 Spacer(Modifier.height(6.dp))
                 AuthTextField(
                     value            = password,
-                    onValueChange    = { password = it },
+                    onValueChange    = viewModel::onPasswordChange,
                     placeholder      = "Enter your password",
                     leadingIcon      = Icons.Outlined.Lock,
                     keyboardType     = KeyboardType.Password,
@@ -158,7 +217,8 @@ fun DoctorLoginScreen(
 
                 // Sign In button
                 Button(
-                    onClick  = { onLoginSuccess() },
+                    onClick  = { viewModel.login() },
+                    enabled  = !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
@@ -167,11 +227,31 @@ fun DoctorLoginScreen(
                         containerColor = Color(0xFF3D5AF1),
                     ),
                 ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(24.dp),
+                            color       = Color.White,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(
+                            text       = "Sign In",
+                            fontSize   = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = Color.White,
+                        )
+                    }
+                }
+
+                val errorState = uiState as? DoctorLoginUiState.Error
+                if (errorState != null) {
+                    Spacer(Modifier.height(8.dp))
                     Text(
-                        text       = "Sign In",
-                        fontSize   = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color      = Color.White,
+                        text      = errorState.message,
+                        fontSize  = 13.sp,
+                        color     = Color.Red,
+                        textAlign = TextAlign.Center,
+                        modifier  = Modifier.fillMaxWidth(),
                     )
                 }
             }
