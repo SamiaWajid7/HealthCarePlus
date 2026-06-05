@@ -60,7 +60,7 @@ class PatientSignUpViewModel(
 
 @Composable
 fun PatientSignUpScreen(
-    onSignUpSuccess : () -> Unit = {},
+    onSignUpSuccess : (email: String) -> Unit = {},  // FIX 1: carries the real email
     onLoginClick    : () -> Unit = {},
     viewModel       : PatientSignUpViewModel = viewModel(),
 ) {
@@ -77,7 +77,7 @@ fun PatientSignUpScreen(
 
     LaunchedEffect(uiState) {
         if (uiState is PatientSignUpUiState.Success) {
-            onSignUpSuccess()
+            onSignUpSuccess(email.trim())  // FIX 2: pass the typed email, not a hardcode
         }
     }
 
@@ -229,7 +229,8 @@ fun PatientSignUpScreen(
                 if (errorState != null) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text      = errorState.message,                        fontSize  = 13.sp,
+                        text      = errorState.message,
+                        fontSize  = 13.sp,
                         color     = Color.Red,
                         textAlign = TextAlign.Center,
                         modifier  = Modifier.fillMaxWidth(),

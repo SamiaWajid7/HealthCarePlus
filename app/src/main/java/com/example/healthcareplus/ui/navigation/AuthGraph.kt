@@ -57,10 +57,9 @@ fun NavGraphBuilder.authGraph(navController: NavHostController) {
 
     composable(Routes.PatientSignup.route) {
         PatientSignUpScreen(
-            onSignUpSuccess = {
-                // Navigate to OTP verification after signup
+            onSignUpSuccess = { email ->  // FIX: receive the real email from the screen
                 navController.navigate(
-                    Routes.VerifyEmail.createRoute("john.doe@email.com")
+                    Routes.VerifyEmail.createRoute(email)  // FIX: pass it here, not a hardcode
                 ) {
                     popUpTo(Routes.PatientSignup.route) { inclusive = false }
                 }
