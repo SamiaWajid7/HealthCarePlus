@@ -1,6 +1,5 @@
 package com.example.healthcareplus.ui.screens.patient
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,15 +20,30 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.healthcareplus.ui.viewmodel.ProfileUiState
+import com.example.healthcareplus.ui.viewmodel.ProfileViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Profile Screen
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(
+    navController : NavController,
+    vm            : ProfileViewModel = viewModel(),
+) {
     val primaryBlue = Color(0xFF3B4EFF)
+    val state by vm.state.collectAsStateWithLifecycle()
+    val profile = (state as? ProfileUiState.Success)?.profile
+
+    val displayName  = profile?.name        ?: "Loading..."
+    val displayEmail = profile?.email       ?: ""
+    val displayPhone = profile?.phone       ?: ""
+    val displayDob   = profile?.dateOfBirth ?: ""
+    val displayBlood = profile?.bloodGroup  ?: ""
 
     Column(
         modifier = Modifier
@@ -60,8 +74,8 @@ fun ProfileScreen(navController: NavController) {
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("John Doe", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("john.doe@email.com", fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
+                Text(displayName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(displayEmail, fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
             }
         }
 
@@ -79,11 +93,11 @@ fun ProfileScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                ProfileInfoRow(label = "Phone Number", value = "+1 (555) 123-4567")
+                ProfileInfoRow(label = "Phone Number", value = displayPhone.ifEmpty { "—" })
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
-                ProfileInfoRow(label = "Date of Birth", value = "January 15, 1990")
+                ProfileInfoRow(label = "Date of Birth", value = displayDob.ifEmpty { "—" })
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
-                ProfileInfoRow(label = "Blood Group", value = "O+")
+                ProfileInfoRow(label = "Blood Group", value = displayBlood.ifEmpty { "—" })
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
                 ProfileInfoRow(label = "Patient ID", value = "HC-2024-0123")
 
@@ -145,15 +159,26 @@ fun ProfileInfoRow(label: String, value: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditProfileScreen(navController: NavController) {
+fun EditProfileScreen(
+    navController : NavController,
+    vm            : ProfileViewModel = viewModel(),
+) {
     val primaryBlue = Color(0xFF3B4EFF)
+    val state by vm.state.collectAsStateWithLifecycle()
+    val profile = (state as? ProfileUiState.Success)?.profile
 
-    var fullName by remember { mutableStateOf("John Doe") }
-    var email by remember { mutableStateOf("john.doe@email.com") }
-    var phone by remember { mutableStateOf("+1 (555) 123-4567") }
-    var dob by remember { mutableStateOf("01/15/1990") }
-    var bloodGroup by remember { mutableStateOf("O+") }
+    // remember(profile) — re-initializes when Firestore data arrives
+    var fullName   by remember(profile) { mutableStateOf(profile?.name        ?: "") }
+    var email      by remember(profile) { mutableStateOf(profile?.email       ?: "") }
+    var phone      by remember(profile) { mutableStateOf(profile?.phone       ?: "") }
+    var dob        by remember(profile) { mutableStateOf(profile?.dateOfBirth ?: "") }
+    var bloodGroup by remember(profile) { mutableStateOf(profile?.bloodGroup  ?: "") }
     var showSavedDialog by remember { mutableStateOf(false) }
+
+    // Show dialog when save succeeds
+    LaunchedEffect(state) {
+        if (state is ProfileUiState.SaveSuccess) showSavedDialog = true
+    }
 
     Column(
         modifier = Modifier
@@ -229,13 +254,34 @@ fun EditProfileScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(28.dp))
 
+            // Error message if save fails
+            val errorState = state as? ProfileUiState.Error
+            if (errorState != null) {
+                Text(
+                    text = errorState.message,
+                    color = Color.Red,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Button(
-                onClick = { showSavedDialog = true },
+                onClick = { vm.saveProfile(fullName, phone, dob, bloodGroup) },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryBlue)
             ) {
-                Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                if (state is ProfileUiState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

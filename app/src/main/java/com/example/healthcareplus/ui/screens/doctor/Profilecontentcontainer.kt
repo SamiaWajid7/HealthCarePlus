@@ -16,7 +16,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.TextSnippet
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.healthcareplus.theme.BorderLight
@@ -34,6 +36,8 @@ import com.example.healthcareplus.theme.TextPrimary
 import com.example.healthcareplus.theme.TextSecondary
 import com.example.healthcareplus.theme.White
 import com.example.healthcareplus.ui.navigation.Routes
+import com.example.healthcareplus.ui.viewmodel.ProfileUiState
+import com.example.healthcareplus.ui.viewmodel.ProfileViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProfileContentContainer  (full screen)
@@ -48,13 +52,18 @@ import com.example.healthcareplus.ui.navigation.Routes
 @Composable
 fun ProfileContentContainer(
     navController : NavController,
-    doctorName    : String = "Dr. Sarah Johnson",
-    doctorEmail   : String = "SarahJohnson@email.com",
-    phoneNumber   : String = "+1 (555) 123-4567",
-    dateOfBirth   : String = "January 15, 1990",
-    bloodGroup    : String = "O+",
-    medicalId     : String = "HC-2024-0123",
+    vm            : ProfileViewModel = viewModel(),
 ) {
+    val state   by vm.state.collectAsStateWithLifecycle()
+    val profile = (state as? ProfileUiState.Success)?.profile
+
+    val doctorName  = profile?.name        ?: "Loading..."
+    val doctorEmail = profile?.email       ?: ""
+    val phoneNumber = profile?.phone       ?: ""
+    val dateOfBirth = profile?.dateOfBirth ?: ""
+    val bloodGroup  = profile?.bloodGroup  ?: ""
+    val medicalId   = profile?.medicalId   ?: ""
+
     Scaffold(
         containerColor = Color(0xFFF5F6FA),
         bottomBar = {
@@ -145,7 +154,7 @@ fun ProfileContentContainer(
 
                         Spacer(Modifier.height(16.dp))
 
-                        PersonalInfoRow(label = "Phone Number", value = phoneNumber)
+                        PersonalInfoRow(label = "Phone Number", value = phoneNumber.ifEmpty { "—" })
 
                         HorizontalDivider(
                             modifier  = Modifier.padding(vertical = 14.dp),
@@ -153,7 +162,7 @@ fun ProfileContentContainer(
                             thickness = 1.dp,
                         )
 
-                        PersonalInfoRow(label = "Date of Birth", value = dateOfBirth)
+                        PersonalInfoRow(label = "Date of Birth", value = dateOfBirth.ifEmpty { "—" })
 
                         HorizontalDivider(
                             modifier  = Modifier.padding(vertical = 14.dp),
@@ -161,7 +170,7 @@ fun ProfileContentContainer(
                             thickness = 1.dp,
                         )
 
-                        PersonalInfoRow(label = "Blood Group", value = bloodGroup)
+                        PersonalInfoRow(label = "Blood Group", value = bloodGroup.ifEmpty { "—" })
 
                         HorizontalDivider(
                             modifier  = Modifier.padding(vertical = 14.dp),
@@ -169,7 +178,7 @@ fun ProfileContentContainer(
                             thickness = 1.dp,
                         )
 
-                        PersonalInfoRow(label = "Medical ID", value = medicalId)
+                        PersonalInfoRow(label = "Medical ID", value = medicalId.ifEmpty { "—" })
 
                         Spacer(Modifier.height(20.dp))
 

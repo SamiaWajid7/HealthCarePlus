@@ -1,5 +1,8 @@
 package com.example.healthcareplus.ui.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -19,6 +22,8 @@ import com.example.healthcareplus.ui.screens.patient.NotificationsScreen
 import com.example.healthcareplus.ui.screens.patient.PatientHomeScreen
 import com.example.healthcareplus.ui.screens.patient.ProfileScreen
 import com.example.healthcareplus.ui.screens.patient.SecuritySettingsScreen
+import com.example.healthcareplus.ui.viewmodel.ProfileUiState
+import com.example.healthcareplus.ui.viewmodel.ProfileViewModel
 
 fun NavGraphBuilder.patientGraph(navController: NavHostController) {
 
@@ -29,7 +34,12 @@ fun NavGraphBuilder.patientGraph(navController: NavHostController) {
 
         // ── Home ──────────────────────────────────────────────────────────
         composable(Routes.PatientHome.route) {
+            val vm: ProfileViewModel = viewModel()
+            val state by vm.state.collectAsStateWithLifecycle()
+            val patientName = (state as? ProfileUiState.Success)?.profile?.name ?: ""
+
             PatientHomeScreen(
+                patientName     = patientName,
                 onNotifications = { navController.navigate(Routes.Notifications.route) },
                 onLabReports    = { navController.navigate(Routes.LabReports.route) },
                 onBookVisit     = { navController.navigate(Routes.BookAppointment.route) },

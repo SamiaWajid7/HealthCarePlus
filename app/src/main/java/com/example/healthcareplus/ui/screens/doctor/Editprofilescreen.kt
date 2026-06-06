@@ -1,4 +1,5 @@
 package com.example.healthcareplus.ui.screens.doctor
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,9 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.healthcareplus.theme.Background
@@ -29,6 +33,8 @@ import com.example.healthcareplus.theme.SurfaceVariant
 import com.example.healthcareplus.theme.TextPrimary
 import com.example.healthcareplus.theme.TextSecondary
 import com.example.healthcareplus.theme.White
+import com.example.healthcareplus.ui.viewmodel.ProfileUiState
+import com.example.healthcareplus.ui.viewmodel.ProfileViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EditProfileScreen
@@ -44,15 +50,25 @@ import com.example.healthcareplus.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditProfileScreen(navController: NavController) {
+fun EditProfileScreen(
+    navController : NavController,
+    vm            : ProfileViewModel = viewModel(),
+) {
+    val state   by vm.state.collectAsStateWithLifecycle()
+    val profile = (state as? ProfileUiState.Success)?.profile
 
-    // ── Local state (pre-filled with Dr. Sarah Johnson demo data) ─────────
-    var fullName    by remember { mutableStateOf("Dr. Sarah Johnson") }
-    var email       by remember { mutableStateOf("SarahJohnson@email.com") }
-    var phone       by remember { mutableStateOf("+1 (555) 123-4567") }
-    var dob         by remember { mutableStateOf("01/15/1990") }
-    var bloodGroup  by remember { mutableStateOf("O+") }
-    var showDialog  by remember { mutableStateOf(false) }
+    // remember(profile) — re-initializes fields when Firestore data arrives
+    var fullName   by remember(profile) { mutableStateOf(profile?.name        ?: "") }
+    var email      by remember(profile) { mutableStateOf(profile?.email       ?: "") }
+    var phone      by remember(profile) { mutableStateOf(profile?.phone       ?: "") }
+    var dob        by remember(profile) { mutableStateOf(profile?.dateOfBirth ?: "") }
+    var bloodGroup by remember(profile) { mutableStateOf(profile?.bloodGroup  ?: "") }
+    var showDialog by remember { mutableStateOf(false) }
+
+    // Show dialog when Firestore save succeeds
+    LaunchedEffect(state) {
+        if (state is ProfileUiState.SaveSuccess) showDialog = true
+    }
 
     Column(
         modifier = Modifier
@@ -111,11 +127,10 @@ fun EditProfileScreen(navController: NavController) {
 
             // ── Avatar with edit badge ────────────────────────────────────
             Box(
-                modifier          = Modifier.fillMaxWidth(),
-                contentAlignment  = Alignment.Center,
+                modifier         = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
             ) {
                 Box(modifier = Modifier.size(84.dp)) {
-                    // Avatar circle
                     Box(
                         modifier = Modifier
                             .size(84.dp)
@@ -130,7 +145,6 @@ fun EditProfileScreen(navController: NavController) {
                             modifier           = Modifier.size(50.dp),
                         )
                     }
-                    // Edit badge
                     Box(
                         modifier = Modifier
                             .size(28.dp)
@@ -206,7 +220,7 @@ fun EditProfileScreen(navController: NavController) {
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(
-                        text     = bloodGroup,
+                        text     = bloodGroup.ifEmpty { "—" },
                         fontSize = 15.sp,
                         color    = TextPrimary,
                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -216,21 +230,42 @@ fun EditProfileScreen(navController: NavController) {
 
             Spacer(Modifier.height(32.dp))
 
+            // Error message if save fails
+            val errorState = state as? ProfileUiState.Error
+            if (errorState != null) {
+                Text(
+                    text      = errorState.message,
+                    color     = androidx.compose.ui.graphics.Color.Red,
+                    fontSize  = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier  = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
             // ── Save Changes button ───────────────────────────────────────
             Button(
-                onClick  = { showDialog = true },
+                onClick  = { vm.saveProfile(fullName, phone, dob, bloodGroup) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
                 shape  = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
             ) {
-                Text(
-                    text       = "Save Changes",
-                    fontSize   = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = White,
-                )
+                if (state is ProfileUiState.Loading) {
+                    CircularProgressIndicator(
+                        modifier    = Modifier.size(22.dp),
+                        color       = White,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text(
+                        text       = "Save Changes",
+                        fontSize   = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = White,
+                    )
+                }
             }
 
             Spacer(Modifier.height(28.dp))
@@ -276,10 +311,10 @@ private fun EditProfileField(
             singleLine    = true,
             trailingIcon  = trailingIcon,
             colors        = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor     = BorderLight,
-                focusedBorderColor       = Primary,
-                unfocusedContainerColor  = White,
-                focusedContainerColor    = White,
+                unfocusedBorderColor    = BorderLight,
+                focusedBorderColor      = Primary,
+                unfocusedContainerColor = White,
+                focusedContainerColor   = White,
             ),
         )
     }

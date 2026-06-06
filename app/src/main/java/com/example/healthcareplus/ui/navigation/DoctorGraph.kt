@@ -1,5 +1,8 @@
 package com.example.healthcareplus.ui.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -19,6 +22,8 @@ import com.example.healthcareplus.ui.screens.doctor.EditProfileScreen
 import com.example.healthcareplus.ui.screens.doctor.LabReportRequestsScreen
 import com.example.healthcareplus.ui.screens.doctor.ProfileContentContainer
 import com.example.healthcareplus.ui.screens.patient.NotificationsScreen
+import com.example.healthcareplus.ui.viewmodel.ProfileUiState
+import com.example.healthcareplus.ui.viewmodel.ProfileViewModel
 
 fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
 
@@ -29,23 +34,20 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
 
         // ── Home ─────────────────────────────────────────────────────────────
         composable(Routes.DoctorHome.route) {
+            val vm: ProfileViewModel = viewModel()
+            val state by vm.state.collectAsStateWithLifecycle()
+            val profile = (state as? ProfileUiState.Success)?.profile
+
             DoctorHomeScreen(
-                onNotifications = {
-                    navController.navigate(Routes.DoctorNotifications.route)
-                },
-                onAppointments = {
-                    navController.navigate(Routes.DoctorAppointments.route)
-                },
-                onLabReports = {
-                    navController.navigate(Routes.DoctorLabReports.route)
-                },
-                onMessages = {
-                    navController.navigate(Routes.DoctorMessages.route)
-                },
-                onProfile = {
-                    navController.navigate(Routes.DoctorProfile.route)
-                },
-                onJoinCall = {
+                doctorName      = profile?.name      ?: "",
+                specialty       = profile?.specialty  ?: "",
+                medicalId       = profile?.medicalId  ?: "",
+                onNotifications = { navController.navigate(Routes.DoctorNotifications.route) },
+                onAppointments  = { navController.navigate(Routes.DoctorAppointments.route) },
+                onLabReports    = { navController.navigate(Routes.DoctorLabReports.route) },
+                onMessages      = { navController.navigate(Routes.DoctorMessages.route) },
+                onProfile       = { navController.navigate(Routes.DoctorProfile.route) },
+                onJoinCall      = {
                     navController.navigate(
                         Routes.DoctorVideoCall.createRoute("John Doe")
                     )
