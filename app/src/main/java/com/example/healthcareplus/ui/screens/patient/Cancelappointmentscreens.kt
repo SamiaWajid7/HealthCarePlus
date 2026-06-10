@@ -1,6 +1,5 @@
 package com.example.healthcareplus.ui.screens.patient
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.example.healthcareplus.data.model.Appointment  // ← YEH ADD KIA
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cancel Appointment Dialog

@@ -10,19 +10,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.healthcareplus.data.model.Appointment
+import com.example.healthcareplus.ui.viewmodel.AppointmentUiState
+import com.example.healthcareplus.ui.viewmodel.AppointmentViewModel
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 private val PrimaryBlue   = Color(0xFF3D5AF1)
@@ -32,67 +34,67 @@ private val BgLight       = Color(0xFFF3F4F6)
 private val TextPrimary   = Color(0xFF1A1A2E)
 private val TextSecondary = Color(0xFF6B7280)
 private val ErrorRed      = Color(0xFFE53935)
-private val ErrorRedBg    = Color(0xFFFFEBEE)
 private val WarningBg     = Color(0xFFFFF8E1)
 private val WarningText   = Color(0xFF856404)
-
-// ── Data model ────────────────────────────────────────────────────────────────
-data class AppointmentDetail(
-    val patientName   : String = "Robert Brown",
-    val patientId     : String = "HC-2024-0789",
-    val gender        : String = "Male",
-    val age           : Int    = 45,
-    val bloodGroup    : String = "O+",
-    val phone         : String = "+1 555-0123",
-    val email         : String = "robert@email.com",
-    val dateTime      : String = "Feb 16, 2024 • 2:00 PM",
-    val appointmentType: String = "Video Call Consultation",
-    val chiefComplaint: String = "Chest pain and shortness of breath for 2 days. Pain increases with exertion.",
-    val lastVisit     : String = "Jan 15, 2024",
-    val conditions    : String = "Hypertension, Type 2 Diabetes",
-    val allergies     : String = "Penicillin",
-    val currentMeds   : String = "Lisinopril, Metformin",
-)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AppointmentDetailScreen
 // ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
 fun AppointmentDetailScreen(
-    detail    : AppointmentDetail = AppointmentDetail(),
-    onBack    : () -> Unit = {},
-    onApprove : () -> Unit = {},
-    onCancel  : () -> Unit = {},
+    appointmentId : String? = null,       // passed from nav argument
+    onBack        : () -> Unit = {},
+    onApprove     : () -> Unit = {},
+    onCancel      : () -> Unit = {},
+    vm            : AppointmentViewModel = viewModel(),
 ) {
+    val state by vm.state.collectAsStateWithLifecycle()
+
+    // Load single appointment when screen opens
+    LaunchedEffect(appointmentId) {
+        if (!appointmentId.isNullOrEmpty()) {
+            vm.loadAppointmentById(appointmentId)
+        }
+    }
+
     // Dialog state
     var showApprovedDialog  by remember { mutableStateOf(false) }
     var showCancelDialog    by remember { mutableStateOf(false) }
     var showCancelledDialog by remember { mutableStateOf(false) }
 
-    // Show Appointment Approved success dialog
+    // Get the single appointment from state
+    val appointment = when (state) {
+        is AppointmentUiState.SingleSuccess ->
+            (state as AppointmentUiState.SingleSuccess).appointment
+        else -> null
+    }
+
+    // ── Dialogs ───────────────────────────────────────────────────────────────
+
     if (showApprovedDialog) {
         AppointmentApprovedSuccessDialog(
             onDismiss = {
+                appointment?.let { vm.updateStatus(it.id, "Upcoming") }
                 showApprovedDialog = false
                 onApprove()
             },
         )
     }
 
-    // Show Cancel Confirmation dialog
-    if (showCancelDialog) {
+    if (showCancelDialog && appointment != null) {
         DoctorCancelAppointmentDialog(
-            doctorName = detail.patientName,
-            dateTime   = detail.dateTime,
+            doctorName = appointment.patientName,
+            dateTime   = "${appointment.date} • ${appointment.time}",
             onDismiss  = { showCancelDialog = false },
             onConfirm  = {
+                vm.updateStatus(appointment.id, "Cancelled")
                 showCancelDialog    = false
                 showCancelledDialog = true
             },
         )
     }
 
-    // Show Appointment Cancelled success dialog
     if (showCancelledDialog) {
         AppointmentCancelledSuccessDialog(
             onDismiss = {
@@ -102,19 +104,41 @@ fun AppointmentDetailScreen(
         )
     }
 
+    // ── Loading / Error states ────────────────────────────────────────────────
+
+    when {
+        state is AppointmentUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = PrimaryBlue)
+            }
+            return
+        }
+        state is AppointmentUiState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text      = (state as AppointmentUiState.Error).message,
+                    color     = ErrorRed,
+                    fontSize  = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier  = Modifier.padding(24.dp)
+                )
+            }
+            return
+        }
+    }
+
+    // ── Main UI ───────────────────────────────────────────────────────────────
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BgLight),
     ) {
-
-        // ── Scrollable body ───────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
-
             // Back
             Row(
                 modifier          = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
@@ -158,40 +182,17 @@ fun AppointmentDetailScreen(
                     Spacer(Modifier.width(14.dp))
                     Column {
                         Text(
-                            text       = detail.patientName,
+                            text       = appointment?.patientName ?: "—",
                             fontSize   = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color      = TextPrimary,
                         )
                         Text(
-                            text     = detail.patientId,
-                            fontSize = 12.sp,
-                            color    = TextSecondary,
-                        )
-                        Text(
-                            text     = "${detail.gender}, ${detail.age} years • Blood: ${detail.bloodGroup}",
+                            text     = appointment?.patientId ?: "—",
                             fontSize = 12.sp,
                             color    = TextSecondary,
                         )
                     }
-                }
-                Spacer(Modifier.height(12.dp))
-                HorizontalDivider(color = Color(0xFFE5E7EB))
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text     = "Phone: ${detail.phone}",
-                        fontSize = 12.sp,
-                        color    = TextSecondary,
-                    )
-                    Text(
-                        text     = "Email: ${detail.email}",
-                        fontSize = 12.sp,
-                        color    = PrimaryBlue,
-                    )
                 }
             }
 
@@ -207,7 +208,6 @@ fun AppointmentDetailScreen(
                 )
                 Spacer(Modifier.height(12.dp))
 
-                // Date/time
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector        = Icons.Outlined.CalendarMonth,
@@ -217,7 +217,7 @@ fun AppointmentDetailScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text     = detail.dateTime,
+                        text     = "${appointment?.date ?: "—"} • ${appointment?.time ?: "—"}",
                         fontSize = 13.sp,
                         color    = TextSecondary,
                     )
@@ -225,118 +225,121 @@ fun AppointmentDetailScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Appointment type
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector        = Icons.Outlined.Videocam,
+                        imageVector        = Icons.Outlined.MedicalServices,
                         contentDescription = null,
                         tint               = TextSecondary,
                         modifier           = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text     = detail.appointmentType,
+                        text     = appointment?.specialty ?: "—",
                         fontSize = 13.sp,
                         color    = TextSecondary,
                     )
                 }
 
-                Spacer(Modifier.height(12.dp))
-
-                // Chief complaint highlighted box
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(WarningBg)
-                        .padding(12.dp),
-                ) {
-                    Column {
-                        Text(
-                            text       = "Chief Complaint",
-                            fontSize   = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color      = WarningText,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text     = detail.chiefComplaint,
-                            fontSize = 13.sp,
-                            color    = WarningText,
-                        )
+                if (!appointment?.reason.isNullOrEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(WarningBg)
+                            .padding(12.dp),
+                    ) {
+                        Column {
+                            Text(
+                                text       = "Chief Complaint",
+                                fontSize   = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = WarningText,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text     = appointment?.reason ?: "",
+                                fontSize = 13.sp,
+                                color    = WarningText,
+                            )
+                        }
                     }
                 }
             }
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Medical history card ──────────────────────────────────────
+            // ── Status card ───────────────────────────────────────────────
             SectionCard(modifier = Modifier.padding(horizontal = 20.dp)) {
                 Text(
-                    text       = "Medical History",
+                    text       = "Status",
                     fontSize   = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color      = TextPrimary,
                 )
-                Spacer(Modifier.height(12.dp))
-
-                MedicalHistoryRow("Last Visit",    detail.lastVisit)
                 Spacer(Modifier.height(8.dp))
-                MedicalHistoryRow("Conditions",    detail.conditions)
-                Spacer(Modifier.height(8.dp))
-                MedicalHistoryRow("Allergies",     detail.allergies)
-                Spacer(Modifier.height(8.dp))
-                MedicalHistoryRow("Current Meds",  detail.currentMeds)
+                val statusColor = when (appointment?.status) {
+                    "Upcoming"  -> PrimaryBlue
+                    "Completed" -> Color(0xFF28A745)
+                    "Cancelled" -> ErrorRed
+                    else        -> Color(0xFFF59E0B)
+                }
+                Text(
+                    text       = appointment?.status ?: "Pending",
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = statusColor,
+                )
             }
 
             Spacer(Modifier.height(20.dp))
         }
 
-        // ── Sticky bottom buttons ─────────────────────────────────────────
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(White)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // Approve
-            Button(
-                onClick  = { showApprovedDialog = true },
+        // ── Sticky bottom buttons (only for Pending appointments) ─────────
+        if (appointment?.status == "Pending") {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                shape  = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                    .background(White)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Icon(
-                    imageVector        = Icons.Outlined.Check,
-                    contentDescription = null,
-                    modifier           = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text       = "Approve Appointment",
-                    fontSize   = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-            // Cancel
-            OutlinedButton(
-                onClick  = { showCancelDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape  = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed),
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, ErrorRed),
-            ) {
-                Text(
-                    text       = "Cancel Appointment",
-                    fontSize   = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = ErrorRed,
-                )
+                Button(
+                    onClick  = { showApprovedDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape  = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                ) {
+                    Icon(
+                        imageVector        = Icons.Outlined.Check,
+                        contentDescription = null,
+                        modifier           = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text       = "Approve Appointment",
+                        fontSize   = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                OutlinedButton(
+                    onClick  = { showCancelDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape  = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, ErrorRed),
+                ) {
+                    Text(
+                        text       = "Cancel Appointment",
+                        fontSize   = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color      = ErrorRed,
+                    )
+                }
             }
         }
     }
@@ -347,7 +350,7 @@ fun AppointmentDetailScreen(
 fun AppointmentApprovedSuccessDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = {},
+        confirmButton    = {},
         text = {
             Column(
                 modifier            = Modifier.fillMaxWidth(),
@@ -376,10 +379,10 @@ fun AppointmentApprovedSuccessDialog(onDismiss: () -> Unit) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text     = "Your appointment has been confirmed.\nThe patient has been notified.",
-                    fontSize = 14.sp,
-                    color    = TextSecondary,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    text      = "The appointment has been confirmed.\nThe patient has been notified.",
+                    fontSize  = 14.sp,
+                    color     = TextSecondary,
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(20.dp))
                 Button(
@@ -399,8 +402,8 @@ fun AppointmentApprovedSuccessDialog(onDismiss: () -> Unit) {
                 }
             }
         },
-        shape             = RoundedCornerShape(20.dp),
-        containerColor    = White,
+        shape          = RoundedCornerShape(20.dp),
+        containerColor = White,
     )
 }
 
@@ -417,17 +420,6 @@ private fun SectionCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp), content = content)
-    }
-}
-
-@Composable
-private fun MedicalHistoryRow(label: String, value: String) {
-    Row(
-        modifier              = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(text = label, fontSize = 13.sp, color = TextSecondary)
-        Text(text = value, fontSize = 13.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
     }
 }
 

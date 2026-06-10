@@ -63,10 +63,10 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
         // ── Appointments ─────────────────────────────────────────────────────
         composable(Routes.DoctorAppointments.route) {
             DoctorAppointmentsScreen(
-                onBack = { navController.popBackStack() },
-                onViewDetails = { appointment ->
+                onBack        = { navController.popBackStack() },
+                onViewDetails = { appointmentId ->   // FIX: String ID directly
                     navController.navigate(
-                        Routes.DoctorAppointmentDetail.createRoute(appointment.id)
+                        Routes.DoctorAppointmentDetail.createRoute(appointmentId)
                     )
                 },
             )
@@ -79,11 +79,12 @@ fun NavGraphBuilder.doctorGraph(navController: NavHostController) {
                 type     = NavType.StringType
                 nullable = true
             }),
-        ) {
+        ) { entry ->
             AppointmentDetailScreen(
-                onBack    = { navController.popBackStack() },
-                onApprove = { navController.popBackStack() },
-                onCancel  = { navController.popBackStack() },
+                appointmentId = entry.arguments?.getString(Routes.DoctorAppointmentDetail.ARG),
+                onBack        = { navController.popBackStack() },
+                onApprove     = { navController.popBackStack() },
+                onCancel      = { navController.popBackStack() },
             )
         }
 

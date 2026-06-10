@@ -1,6 +1,5 @@
 package com.example.healthcareplus.ui.screens.patient
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,10 +19,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.healthcareplus.data.model.Appointment
+import com.example.healthcareplus.ui.viewmodel.AppointmentUiState
+import com.example.healthcareplus.ui.viewmodel.AppointmentViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Appointment Confirmed Screen
+// Appointment Confirmed Screen  (no Firebase needed — just a success screen)
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -38,7 +42,6 @@ fun AppointmentConfirmedScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Green check circle
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -73,7 +76,6 @@ fun AppointmentConfirmedScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        // Details Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -123,7 +125,6 @@ fun AppointmentConfirmedScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Reminder box
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -168,31 +169,22 @@ fun AppointmentConfirmedScreen(navController: NavController) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// My Appointments Screen
+// My Appointments Screen  — live Firestore data
 // ─────────────────────────────────────────────────────────────────────────────
 
-data class Appointment(
-    val id: String,
-    val doctorName: String,
-    val specialty: String,
-    val date: String,
-    val time: String,
-    val type: String,
-    val location: String,
-    val status: String
-)
-
 @Composable
-fun MyAppointmentsScreen(navController: NavController) {
+fun MyAppointmentsScreen(
+    navController : NavController,
+    vm            : AppointmentViewModel = viewModel(),
+) {
     val primaryBlue = Color(0xFF3B4EFF)
+    val state by vm.state.collectAsStateWithLifecycle()
 
-    val appointments = listOf(
-        Appointment("1", "Dr. Sarah Johnson", "Cardiologist", "Feb 15, 2024", "10:00 AM", "In-Person Appointment", "HealthCare+ Clinic, 5th Floor", "Upcoming"),
-        Appointment("2", "Dr. Michael Chen", "General Physician", "Feb 20, 2024", "2:30 PM", "In-Person Appointment", "HealthCare+ Clinic, 5th Floor", "Upcoming")
-    )
+    var showCancelDialog      by remember { mutableStateOf(false) }
+    var selectedAppointment   by remember { mutableStateOf<Appointment?>(null) }
 
-    var showCancelDialog by remember { mutableStateOf(false) }
-    var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
+    // Load patient appointments on first composition
+    LaunchedEffect(Unit) { vm.loadPatientAppointments() }
 
     Column(
         modifier = Modifier
@@ -203,40 +195,78 @@ fun MyAppointmentsScreen(navController: NavController) {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("< Back", color = primaryBlue, fontSize = 16.sp, modifier = Modifier.clickable { navController.popBackStack() })
+            Text(
+                "< Back",
+                color    = primaryBlue,
+                fontSize = 16.sp,
+                modifier = Modifier.clickable { navController.popBackStack() }
+            )
         }
 
         Text(
             "My Appointments",
-            fontSize = 22.sp,
+            fontSize   = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF1A1A2E),
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            color      = Color(0xFF1A1A2E),
+            modifier   = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
         )
 
-        LazyColumn(
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(appointments) { appt ->
-                AppointmentCard(
-                    appointment = appt,
-                    primaryBlue = primaryBlue,
-                    onMessage = { navController.navigate("chat/${appt.doctorName}") },
-                    onCancel = {
-                        selectedAppointment = appt
-                        showCancelDialog = true
-                    }
-                )
+        when (state) {
+            is AppointmentUiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = primaryBlue)
+                }
             }
+            is AppointmentUiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text      = (state as AppointmentUiState.Error).message,
+                        color     = Color.Red,
+                        fontSize  = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier  = Modifier.padding(24.dp)
+                    )
+                }
+            }
+            is AppointmentUiState.Success -> {
+                val appointments = (state as AppointmentUiState.Success).appointments
+                if (appointments.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            "No appointments yet",
+                            color    = Color.Gray,
+                            fontSize = 15.sp
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding      = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(appointments) { appt ->
+                            AppointmentCard(
+                                appointment = appt,
+                                primaryBlue = primaryBlue,
+                                onMessage   = { navController.navigate("chat/${appt.doctorName}") },
+                                onCancel    = {
+                                    selectedAppointment = appt
+                                    showCancelDialog    = true
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            else -> {}
         }
     }
 
     if (showCancelDialog && selectedAppointment != null) {
         CancelAppointmentDialog(
             appointment = selectedAppointment!!,
-            onDismiss = { showCancelDialog = false },
-            onConfirm = {
+            onDismiss   = { showCancelDialog = false },
+            onConfirm   = {
+                vm.updateStatus(selectedAppointment!!.id, "Cancelled")
                 showCancelDialog = false
                 navController.navigate("appointment_cancelled")
             }
@@ -244,47 +274,69 @@ fun MyAppointmentsScreen(navController: NavController) {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Appointment Card
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
 fun AppointmentCard(
-    appointment: Appointment,
-    primaryBlue: Color,
-    onMessage: () -> Unit,
-    onCancel: () -> Unit
+    appointment : Appointment,
+    primaryBlue : Color,
+    onMessage   : () -> Unit,
+    onCancel    : () -> Unit,
 ) {
+    val statusColor = when (appointment.status) {
+        "Completed"  -> Color(0xFF28A745)
+        "Cancelled"  -> Color.Red
+        "Upcoming"   -> Color(0xFF3B4EFF)
+        else         -> Color(0xFFF59E0B)  // Pending
+    }
+    val statusBg = when (appointment.status) {
+        "Completed"  -> Color(0xFFE8F5E9)
+        "Cancelled"  -> Color(0xFFFFEBEE)
+        "Upcoming"   -> Color(0xFFE8EEFF)
+        else         -> Color(0xFFFFF3E0)
+    }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(16.dp),
+        colors    = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment     = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier
+                        modifier         = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
                             .background(Color(0xFFE3F2FD)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(appointment.doctorName.first().toString(), color = primaryBlue, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text(
+                            appointment.doctorName.first().toString(),
+                            color      = primaryBlue,
+                            fontWeight = FontWeight.Bold,
+                            fontSize   = 18.sp
+                        )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(appointment.doctorName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1A1A2E))
-                        Text(appointment.specialty, fontSize = 13.sp, color = Color.Gray)
+                        Text(appointment.specialty,  fontSize = 13.sp, color = Color.Gray)
                     }
                 }
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFFE8F5E9), RoundedCornerShape(20.dp))
+                        .background(statusBg, RoundedCornerShape(20.dp))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Text(appointment.status, fontSize = 12.sp, color = Color(0xFF28A745), fontWeight = FontWeight.Medium)
+                    Text(appointment.status, fontSize = 12.sp, color = statusColor, fontWeight = FontWeight.Medium)
                 }
             }
 
@@ -303,42 +355,44 @@ fun AppointmentCard(
             Spacer(modifier = Modifier.height(10.dp))
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FFF4)),
+                modifier  = Modifier.fillMaxWidth(),
+                shape     = RoundedCornerShape(10.dp),
+                colors    = CardDefaults.cardColors(containerColor = Color(0xFFF0FFF4)),
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Business, contentDescription = null, tint = Color(0xFF28A745), modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        Text(appointment.type, fontSize = 13.sp, color = Color(0xFF28A745), fontWeight = FontWeight.SemiBold)
-                        Text(appointment.location, fontSize = 12.sp, color = Color(0xFF28A745))
+                        Text("In-Person Appointment", fontSize = 13.sp, color = Color(0xFF28A745), fontWeight = FontWeight.SemiBold)
+                        Text("HealthCare+ Clinic",    fontSize = 12.sp, color = Color(0xFF28A745))
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(
-                    onClick = onMessage,
-                    modifier = Modifier.weight(1f).height(44.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryBlue)
-                ) {
-                    Icon(Icons.Default.Message, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Message", fontSize = 14.sp)
-                }
-                OutlinedButton(
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f).height(44.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.Red)
-                ) {
-                    Text("Cancel", fontSize = 14.sp, color = Color.Red)
+            // Only show action buttons if not already cancelled/completed
+            if (appointment.status != "Cancelled" && appointment.status != "Completed") {
+                Spacer(modifier = Modifier.height(14.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick  = onMessage,
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape    = RoundedCornerShape(10.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = primaryBlue)
+                    ) {
+                        Icon(Icons.Default.Message, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Message", fontSize = 14.sp)
+                    }
+                    OutlinedButton(
+                        onClick  = onCancel,
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape    = RoundedCornerShape(10.dp),
+                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
+                        border   = androidx.compose.foundation.BorderStroke(1.5.dp, Color.Red)
+                    ) {
+                        Text("Cancel", fontSize = 14.sp, color = Color.Red)
+                    }
                 }
             }
         }
